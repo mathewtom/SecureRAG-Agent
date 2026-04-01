@@ -38,6 +38,21 @@ result = chain.query("What is our vacation policy?", user_id="E003")
 
 The `user_id` determines what the retriever is allowed to return. An IC sees policies and their own HR record. A VP sees everything. Unknown users get nothing. Each user is rate-limited to 10 requests per 60-second window by default — configurable via `build_chain(max_requests=, window_seconds=)`. Exceeding the limit raises `RateLimitExceeded` before any retrieval or LLM work happens.
 
+### API Server
+
+The pipeline also exposes a FastAPI HTTP interface for integration with red-teaming tools (Garak, PromptFoo, etc.):
+
+```bash
+uvicorn src.api:app --host 0.0.0.0 --port 8000
+```
+
+Endpoints:
+
+- `GET /health` — liveness check
+- `POST /query` — accepts `{"question": "...", "user_id": "..."}`, returns answer + source documents. Returns 429 with `Retry-After` header when rate-limited.
+
+### Tests
+
 Tests run without Ollama (the LLM is mocked, ChromaDB runs in-memory):
 
 ```bash

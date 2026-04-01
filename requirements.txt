@@ -9,3 +9,5 @@ pytest
 pytest-cov
 pypdf
 ollama
+fastapi
+uvicorn
