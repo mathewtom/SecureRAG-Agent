@@ -7,7 +7,7 @@ A security-hardened RAG pipeline that treats the LLM as an untrusted component. 
 Requires Python 3.12+ and [Ollama](https://ollama.com).
 
 ```bash
-git clone https://github.com/<your-username>/SecureRAG-Sentinel.git
+git clone https://github.com/mathewtom/SecureRAG-Sentinel.git
 cd SecureRAG-Sentinel
 python -m venv .venv
 source .venv/bin/activate
@@ -36,7 +36,7 @@ chain = build_chain()
 result = chain.query("What is our vacation policy?", user_id="E003")
 ```
 
-The `user_id` determines what the retriever is allowed to return. An IC sees policies and their own HR record. A VP sees everything. Unknown users get nothing.
+The `user_id` determines what the retriever is allowed to return. An IC sees policies and their own HR record. A VP sees everything. Unknown users get nothing. Each user is rate-limited to 10 requests per 60-second window by default — configurable via `build_chain(max_requests=, window_seconds=)`. Exceeding the limit raises `RateLimitExceeded` before any retrieval or LLM work happens.
 
 Tests run without Ollama (the LLM is mocked, ChromaDB runs in-memory):
 
@@ -55,6 +55,8 @@ The gate runs three scans in priority order. First, the injection scanner scores
 Clean chunks are embedded with `all-MiniLM-L6-v2` and stored in ChromaDB.
 
 **Querying** happens per request. The `AccessControlledRetriever` computes visibility from an org chart using BFS traversal, then builds a ChromaDB `$or` filter: policies are visible to everyone, HR records only to the subject and their management chain. This is enforced at the retriever, not the prompt — unauthorized chunks never leave the database, so there's nothing for the LLM to leak. Visibility is computed at query time so org changes require zero re-indexing.
+
+Before retrieval runs, a per-user sliding-window rate limiter checks whether the caller has exceeded their request quota. This limits enumeration and brute-force data extraction attempts — a blocked request short-circuits before any embedding or LLM computation.
 
 Retrieved chunks are formatted into a security-focused prompt that tells the model to answer only from context and never follow instructions embedded in documents. This is defense-in-depth, not a primary control — the 8B model's instruction-following is too weak to be a security boundary.
 
@@ -84,7 +86,7 @@ Retrieved chunks are formatted into a security-focused prompt that tells the mod
 
 **AML.T0020 (Erode ML Model Integrity)** — Documents are scanned and sanitized before entering the vector store. Poisoned content can't corrupt the retrieval index.
 
-**AML.T0024 (Exfiltration via Inference API)** — Org-chart filtering at the retriever prevents unauthorized data from entering the LLM context. An IC can't extract VP-level records regardless of prompt.
+**AML.T0024 (Exfiltration via Inference API)** — Org-chart filtering at the retriever prevents unauthorized data from entering the LLM context. Per-user rate limiting restricts enumeration attempts. An IC can't extract VP-level records regardless of prompt or query volume.
 
 **AML.T0043 (Craft Adversarial Data)** — Pattern validators (Luhn checksum, SSA prefix rules) catch adversarial inputs designed to bypass simple regex.
 
