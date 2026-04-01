@@ -1,6 +1,7 @@
 """PII detection combining regex patterns with Presidio NER analysis."""
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from presidio_analyzer import AnalyzerEngine
@@ -25,7 +26,7 @@ def _luhn_check(card_number: str) -> bool:
 
 
 # (category, compiled_pattern, optional_validator)
-_REGEX_PATTERNS: list[tuple[str, re.Pattern, callable | None]] = [
+_REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
     (
         "SSN",
         re.compile(
