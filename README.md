@@ -2,6 +2,8 @@
 
 A security-hardened RAG pipeline that treats the LLM as an untrusted component. Documents are sanitized before they hit the vector store and access-controlled before they reach the model. Dockerized for one-command deployment. Built with LangChain, ChromaDB, Presidio, FastAPI, and Ollama (LLaMA 3.1 8B).
 
+> **Note:** Rate limiting is currently set to 100,000 requests per 10 minutes to allow unthrottled security testing with Garak and PromptFoo. Production default is 10 requests per 60 seconds. See the `TEMP` comments in `src/rate_limiter.py` and `src/chain.py`.
+
 ## Quick Start (Docker)
 
 ```bash
