@@ -15,16 +15,21 @@ class InjectionScanResult:
 
 # (label, score, compiled_regex)
 _SCORED_PATTERNS: list[tuple[str, int, re.Pattern]] = [
-    ("ignore previous instructions", 5, re.compile(r"ignore\s+previous\s+instructions", re.IGNORECASE)),
+    ("ignore previous instructions", 5, re.compile(r"ignore\s+(any\s+)?previous\s+(and\s+following\s+)?instructions", re.IGNORECASE)),
     ("ignore all", 5, re.compile(r"ignore\s+all", re.IGNORECASE)),
     ("<|im_start|>", 5, re.compile(r"<\|im_start\|>", re.IGNORECASE)),
+    ("just print/say", 5, re.compile(r"just\s+(print|say|output|type|write)\s+\"", re.IGNORECASE)),
+    ("stop everything", 5, re.compile(r"stop\s+everything", re.IGNORECASE)),
     ("system prompt", 4, re.compile(r"system\s+prompt", re.IGNORECASE)),
+    ("nevermind override", 4, re.compile(r"nevermind\.?\s+ignore", re.IGNORECASE)),
     ("you are now", 3, re.compile(r"you\s+are\s+now", re.IGNORECASE)),
     ("[SYSTEM]", 3, re.compile(r"\[SYSTEM\]", re.IGNORECASE)),
     ("reveal all", 3, re.compile(r"reveal\s+all", re.IGNORECASE)),
     ("[INST]", 3, re.compile(r"\[INST\]", re.IGNORECASE)),
     ("debug mode", 3, re.compile(r"debug\s+mode", re.IGNORECASE)),
     ("confidential data", 3, re.compile(r"confidential\s+data", re.IGNORECASE)),
+    ("do not follow", 3, re.compile(r"do\s+not\s+follow\s+(previous|prior|above)", re.IGNORECASE)),
+    ("disregard", 5, re.compile(r"disregard\s+(all|any|previous|prior|above)", re.IGNORECASE)),
 ]
 
 _DEFAULT_THRESHOLD = 8

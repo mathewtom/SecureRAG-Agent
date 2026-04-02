@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from src.chain import build_chain, SecureRAGChain
+from src.chain import build_chain, SecureRAGChain, QueryBlocked, OutputFlagged
 from src.rate_limiter import RateLimitExceeded
 
 _chain: SecureRAGChain | None = None
@@ -53,6 +53,16 @@ def query(request: QueryRequest) -> QueryResponse:
             status_code=429,
             detail=str(exc),
             headers={"Retry-After": str(int(exc.retry_after) + 1)},
+        )
+    except QueryBlocked as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Query blocked: {exc.reason}",
+        )
+    except OutputFlagged as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Response withheld: {', '.join(exc.reasons)}",
         )
 
     return QueryResponse(
