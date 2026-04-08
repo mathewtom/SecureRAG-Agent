@@ -110,7 +110,7 @@ The gate runs three scans in priority order. First, the injection scanner scores
 
 Clean chunks are embedded with `all-MiniLM-L6-v2` and stored in ChromaDB.
 
-**Querying** runs a six-layer defense stack on each request:
+**Querying** normalizes input via NFKC (collapses fullwidth characters, ligatures, combining marks) then runs a six-layer defense stack on each request:
 
 1. **Rate limiter** — Per-user sliding window. Blocked requests short-circuit before any compute.
 2. **Input injection scan (regex)** — Scores the query against known injection patterns. Threshold is 5 (lower than ingestion's 8) so single strong patterns like "stop everything" or "just print" trigger a block.
@@ -123,7 +123,7 @@ Clean chunks are embedded with `all-MiniLM-L6-v2` and stored in ChromaDB.
 
 ### OWASP Top 10 for LLM Applications
 
-**LLM01 (Prompt Injection)** — Multi-layer defense: ingestion-time quarantine, query-time regex scoring, embedding similarity detection. Injection patterns are blocked at both write and read paths.
+**LLM01 (Prompt Injection)** — Multi-layer defense: NFKC normalization at ingestion and query time, ingestion-time quarantine, query-time regex scoring, embedding similarity detection. Injection patterns are blocked at both write and read paths. Fullwidth and ligature evasion is neutralized before scanning. Known gap: Cyrillic homoglyphs (е vs e) are not addressed by NFKC.
 
 **LLM02 (Insecure Output Handling)** — Two-stage output scanner: regex fast path for known rogue strings and hijack patterns, plus Llama Guard 3 1B semantic classification for novel unsafe content. Flagged responses are withheld. Source documents are returned with every response for auditability.
 

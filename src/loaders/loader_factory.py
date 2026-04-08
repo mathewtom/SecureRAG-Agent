@@ -1,6 +1,7 @@
 """Generic document loader that walks a directory and picks loaders by extension."""
 
 import logging
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -55,6 +56,7 @@ def load_documents(
             continue
 
         for doc in file_docs:
+            doc.page_content = unicodedata.normalize("NFKC", doc.page_content)
             doc.metadata.update({
                 "filename": file_path.name,
                 "file_type": ext,

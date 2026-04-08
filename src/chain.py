@@ -1,6 +1,7 @@
 """RAG chain with security-focused prompt template and Ollama LLM."""
 
 import os
+import unicodedata
 
 import chromadb
 from langchain_community.llms import Ollama
@@ -126,6 +127,9 @@ class SecureRAGChain:
         user_id: str,
     ) -> dict:
         """Query with full defense stack. Returns answer and source_documents."""
+        # NFKC normalization — collapses fullwidth, ligatures, combining chars
+        question = unicodedata.normalize("NFKC", question)
+
         # Layer 1: Rate limiting
         if self._rate_limiter:
             self._rate_limiter.check(user_id)
