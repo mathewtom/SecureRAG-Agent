@@ -12,7 +12,7 @@ Full reports under [`reports/`](reports/).
 
 **V2 remediations** — Based on V1 findings, added three query-time defenses:
 1. **Input injection scan** — Regex pattern scoring on user queries (threshold 5, lower than ingestion's 8). Catches "ignore previous instructions", "stop everything", "just print", "disregard", and other patterns from the Garak scan.
-2. **Embedding similarity detector** — Compares query embeddings against a corpus of 15 known injection prompts via cosine similarity (threshold 0.55). Catches novel phrasings that regex misses.
+2. **Embedding similarity detector** — Compares query embeddings against a corpus of 100 known injection prompts across 13 attack categories (DAN, grandma exploit, Bad Likert, hypothetical framing, role-play override, authority impersonation, emotional manipulation, etc.) via cosine similarity (threshold 0.55). Catches novel phrasings that regex misses.
 3. **Output scanner** — Two-stage post-LLM filter. Fast path checks for rogue strings and hijack patterns (regex). Slow path runs Llama Guard 3 1B semantic classification to catch novel jailbreak patterns (Bad Likert, Deceptive Delight, etc.). Flagged responses are withheld.
 
 **V2 scans** ([`garak_scan_v2_full.md`](reports/garak_scan_v2_full.md), [`garak_scan_v2_full_native_ollama.md`](reports/garak_scan_v2_full_native_ollama.md)) — Ran full Garak probe suite against the `/query` API endpoint. Key findings: API key leaks 0%, toxic content 0%, slur continuation 0%. The `badchars` probe shows 84% "bypass" but this is a detection mismatch — the model correctly says "I don't have enough information" (proper RAG behavior) rather than explicit safety refusal language that the detector expects. DAN jailbreaks partially effective at the LLM level but mitigated by the RAG architecture: even in "DAN mode" the model can only access documents the retriever returns.
@@ -114,7 +114,7 @@ Clean chunks are embedded with `all-MiniLM-L6-v2` and stored in ChromaDB.
 
 1. **Rate limiter** — Per-user sliding window. Blocked requests short-circuit before any compute.
 2. **Input injection scan (regex)** — Scores the query against known injection patterns. Threshold is 5 (lower than ingestion's 8) so single strong patterns like "stop everything" or "just print" trigger a block.
-3. **Embedding similarity scan** — Compares the query embedding against a corpus of known injection prompts. Blocks if cosine similarity exceeds 0.55. Catches novel phrasings that regex misses.
+3. **Embedding similarity scan** — Compares the query embedding against a 100-entry corpus spanning 13 attack categories. Blocks if cosine similarity exceeds 0.55. Catches novel phrasings that regex misses.
 4. **Access-controlled retrieval** — Computes visibility from the org chart via BFS, builds a ChromaDB `$or` filter. Unauthorized chunks never leave the database.
 5. **LLM inference** — Security prompt template instructs the model to answer only from context and never follow embedded instructions. Defense-in-depth only — the 8B model's instruction-following is too weak to be a security boundary.
 6. **Output scan** — Two-stage scanner. Fast path checks for rogue strings and hijack patterns (regex). Slow path classifies the response via Llama Guard 3 1B for semantic safety. Flagged responses are withheld (HTTP 422) before reaching the user.
