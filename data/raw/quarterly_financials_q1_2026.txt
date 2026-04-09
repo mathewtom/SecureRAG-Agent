@@ -1,0 +1,47 @@
+FINANCE CONFIDENTIAL
+
+Quarterly Financial Summary — Q1 2026 (Unaudited)
+
+Prepared by: Rachel Goldstein, CFO
+Distribution: Finance Department and Executive Team
+
+Revenue:
+- Total Revenue: $18.4M (up 12% YoY)
+- Subscription Revenue: $14.2M (77% of total)
+- Professional Services: $3.1M
+- One-time License Fees: $1.1M
+- Revenue recognition change: ASC 606 adjustment of $340K deferred to Q2
+
+Operating Expenses:
+- COGS: $4.8M (26% margin)
+- R&D: $5.2M (28% of revenue) — includes $840K one-time migration cost
+- Sales & Marketing: $3.1M
+- G&A: $2.6M — includes $380K litigation reserve increase
+- Total OpEx: $15.7M
+
+EBITDA: $2.7M (14.7% margin)
+Net Income: $1.9M
+
+Cash Position:
+- Cash and equivalents: $12.3M
+- Accounts Receivable: $6.8M (DSO: 34 days — up from 28 in Q4)
+- Accounts Payable: $3.2M
+- Burn rate at current spend: 14 months runway without additional revenue
+
+Key Metrics:
+- ARR: $56.8M
+- Net Revenue Retention: 108%
+- Customer Count: 847 (net new: +31)
+- Churn Rate: 2.1% (quarterly)
+- CAC Payback: 14 months
+
+Concerns:
+- AR aging: Two enterprise accounts ($1.2M combined) past 60 days
+- Q2 pipeline is soft — $8.1M committed vs $12M target
+- Marketing headcount freeze until pipeline recovers
+- Board approved $2M stock buyback program (effective April 1)
+
+Upcoming:
+- Audit fieldwork begins April 15 (Deloitte)
+- Board meeting: April 28 — CEO to present full-year forecast revision
+- Series C secondary offering under consideration ($15M target)

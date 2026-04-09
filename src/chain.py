@@ -16,6 +16,7 @@ from src.rate_limiter import RateLimiter
 from src.retrieval.access_controlled import AccessControlledRetriever
 from src.sanitizers.embedding_detector import EmbeddingInjectionDetector
 from src.sanitizers.injection_scanner import InjectionScanner
+from src.sanitizers.classification_guard import ClassificationGuard
 from src.sanitizers.output_scanner import OutputScanner
 
 SECURITY_PROMPT_TEMPLATE = """You are a secure document assistant. Answer the user's question using ONLY the context provided below. Do not use any prior knowledge.
@@ -102,6 +103,7 @@ class SecureRAGChain:
     Layer 4: Access-controlled retrieval (org-chart filtering)
     Layer 5: LLM inference (security prompt template)
     Layer 6: Output scan (regex fast path + Llama Guard semantic classifier)
+    Layer 7: Classification guard (output-side enforcement of document clearance)
     """
 
     def __init__(
@@ -191,6 +193,22 @@ class SecureRAGChain:
                     details={"reasons": output_result.reasons},
                 )
                 raise OutputFlagged(reasons=output_result.reasons)
+
+        # Layer 7: Classification guard (per-query, scoped to user's clearance)
+        if hasattr(self._retriever, '_get_accessible_classifications'):
+            guard = ClassificationGuard(
+                user_accessible_classifications=self._retriever._get_accessible_classifications(user_id),
+            )
+            guard_result = guard.scan(answer)
+            if guard_result.flagged:
+                reasons = [f"classification_leak: {c}" for c in guard_result.leaked_classifications]
+                log_denial(
+                    request_id=request_id, user_id=user_id,
+                    layer="classification_guard", reason="classification_leak",
+                    question=question,
+                    details={"leaked": guard_result.leaked_classifications},
+                )
+                raise OutputFlagged(reasons=reasons)
 
         return {
             "answer": answer,

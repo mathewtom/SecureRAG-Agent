@@ -1,0 +1,34 @@
+LEGAL CONFIDENTIAL — ATTORNEY-CLIENT PRIVILEGED
+
+Pending Litigation Summary — Q1 2026
+
+This document is protected by attorney-client privilege. Distribution outside the Legal department and named executives requires written approval from General Counsel.
+
+Case 1: Meridian Retail Partners v. Sentinel Corp
+- Docket: 2:25-cv-04891 (C.D. Cal.)
+- Filed: November 2025
+- Claim: Breach of contract ($4.2M) — alleges delayed API integration caused lost holiday revenue
+- Status: Discovery phase. Opposing counsel requested production of internal Slack messages (motion to compel filed January 15)
+- Risk Assessment: MEDIUM. Contract language is ambiguous on delivery timeline. Settlement range: $1.5-2.5M
+- Outside Counsel: Morrison & Park LLP (partner: Angela Wu)
+- Internal Lead: James Okafor (E006)
+
+Case 2: DOL Investigation — Wage Classification
+- Agency: Department of Labor, Wage and Hour Division
+- Opened: October 2025
+- Subject: Classification of 12 contract QA testers as independent contractors
+- Exposure: Back wages + penalties estimated $380,000-$620,000
+- Status: Document production completed. Interview phase expected March 2026.
+- Recommendation: Reclassify affected workers proactively. Budget impact absorbed in Q2.
+- Internal Lead: Amy Zhao (E009)
+
+Case 3: Patent Assertion — NovaTech IP Holdings
+- Docket: 1:26-cv-00234 (D. Del.)
+- Filed: January 2026
+- Claim: Infringement of US Patent 11,234,567 (method for real-time transaction scoring)
+- Status: Answer filed. IPR petition under preparation (prior art identified in 2018 IEEE paper)
+- Risk Assessment: LOW. Patent appears invalid based on prior art. Expected resolution via IPR.
+- Outside Counsel: Fish & Richardson (partner: David Liang)
+- Internal Lead: James Okafor (E006)
+
+Total Litigation Reserve: $3.8M (included in Q1 financial statements)

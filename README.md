@@ -112,20 +112,21 @@ pytest tests/ -v -m integration
 
 There are two paths with ChromaDB in the middle.
 
-**Ingestion** runs once (or whenever you add docs). The loader factory walks `data/raw/` and picks a LangChain loader by file extension. HR records get a dedicated loader that yields one document per employee and stamps each with `subject_employee_id` and a manager chain. Everything gets chunked (500 chars, 50 overlap), then fed through the `SanitizationGate`.
+**Ingestion** runs once (or whenever you add docs). The loader factory walks `data/raw/` and picks a LangChain loader by file extension. After NFKC normalization, the classification extractor scans the first 500 characters for classification markers (`ENGINEERING CONFIDENTIAL`, `LEGAL CONFIDENTIAL`, `HR CONFIDENTIAL`, `FINANCE CONFIDENTIAL`, `EXECUTIVE CONFIDENTIAL`) and promotes them to metadata. HR records get a dedicated loader that yields one document per employee and stamps each with `subject_employee_id` and a manager chain. Everything gets chunked (500 chars, 50 overlap), then fed through the `SanitizationGate`.
 
 The gate runs three scans in priority order. First, the injection scanner scores text against known prompt injection patterns (instruction overrides, ChatML tokens, role hijacking, etc.) — if the cumulative score hits the threshold, the chunk is quarantined and remaining scans are skipped. This short-circuit is intentional: an attacker could craft payloads that exploit downstream scanners, so adversarial content gets no further processing. Second, the PII detector combines regex patterns (SSN with prefix validation, credit card with Luhn check, email, phone, AWS keys, IBAN) with Presidio's NER engine for names and locations. Matches get replaced with `[SSN_REDACTED]`-style tags and the chunk continues through. Third slot is reserved for a credential scanner (not yet implemented).
 
-Clean chunks are embedded with `all-MiniLM-L6-v2` and stored in ChromaDB.
+Clean chunks are embedded with `all-MiniLM-L6-v2` and stored in ChromaDB with classification metadata.
 
-**Querying** normalizes input via NFKC (collapses fullwidth characters, ligatures, combining marks) then runs a six-layer defense stack on each request:
+**Querying** normalizes input via NFKC (collapses fullwidth characters, ligatures, combining marks) then runs a seven-layer defense stack on each request:
 
 1. **Rate limiter** — Per-user sliding window. Blocked requests short-circuit before any compute.
 2. **Input injection scan (regex)** — Scores the query against known injection patterns. Threshold is 5 (lower than ingestion's 8) so single strong patterns like "stop everything" or "just print" trigger a block.
 3. **Embedding similarity scan** — Compares the query embedding against a 100-entry corpus spanning 13 attack categories. Blocks if cosine similarity exceeds 0.55. Catches novel phrasings that regex misses.
-4. **Access-controlled retrieval** — Computes visibility from the org chart via BFS, builds a ChromaDB `$or` filter. Unauthorized chunks never leave the database.
+4. **Access-controlled retrieval** — Three-dimensional filtering: org-chart BFS for HR records, department membership for classified documents, public access for policies. Unauthorized chunks never leave the database. Executive department sees all classifications.
 5. **LLM inference** — Security prompt template instructs the model to answer only from context and never follow embedded instructions. Defense-in-depth only — the 8B model's instruction-following is too weak to be a security boundary.
 6. **Output scan** — Two-stage scanner. Fast path checks for rogue strings and hijack patterns (regex). Slow path classifies the response via Llama Guard 3 1B for semantic safety. Flagged responses are withheld (HTTP 422) before reaching the user.
+7. **Classification guard** — Scans LLM output for classification markers (e.g., "LEGAL CONFIDENTIAL") that the requesting user's clearance level doesn't permit. Catches leaked classified content even if the retriever filter was bypassed. Defense-in-depth at the output boundary.
 
 ## Security mappings
 
@@ -137,7 +138,7 @@ Clean chunks are embedded with `all-MiniLM-L6-v2` and stored in ChromaDB.
 
 **LLM03 (Training Data Poisoning)** — All documents pass through the full sanitization gate before embedding. Poisoned documents are quarantined at ingestion.
 
-**LLM06 (Sensitive Information Disclosure)** — PII is redacted before embedding. Access control ensures HR records are only retrievable by authorized users in the management chain.
+**LLM06 (Sensitive Information Disclosure)** — PII is redacted before embedding. Three-dimensional access control: org-chart for HR records, department membership for classified documents, classification guard at output for defense-in-depth. Documents carry classification metadata extracted at ingestion from text markers.
 
 **LLM08 (Excessive Agency)** — The LLM has no tool use, no code execution, no write access. It receives context and produces text.
 

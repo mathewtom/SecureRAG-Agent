@@ -34,9 +34,65 @@
     {
         "employee_id": "E005",
         "name": "Lisa Thompson",
-        "title": "HR Business Partner",
+        "title": "HR Director",
         "department": "Human Resources",
-        "salary": 130000,
+        "salary": 170000,
         "start_date": "2021-04-05"
+    },
+    {
+        "employee_id": "E006",
+        "name": "James Okafor",
+        "title": "General Counsel",
+        "department": "Legal",
+        "salary": 220000,
+        "start_date": "2020-01-15"
+    },
+    {
+        "employee_id": "E007",
+        "name": "Rachel Goldstein",
+        "title": "CFO",
+        "department": "Finance",
+        "salary": 260000,
+        "start_date": "2018-11-01"
+    },
+    {
+        "employee_id": "E008",
+        "name": "Carlos Mendez",
+        "title": "HR Coordinator",
+        "department": "Human Resources",
+        "salary": 85000,
+        "start_date": "2023-02-14"
+    },
+    {
+        "employee_id": "E009",
+        "name": "Amy Zhao",
+        "title": "Legal Counsel",
+        "department": "Legal",
+        "salary": 175000,
+        "start_date": "2021-09-01"
+    },
+    {
+        "employee_id": "E010",
+        "name": "Robert Walsh",
+        "title": "Financial Analyst",
+        "department": "Finance",
+        "salary": 125000,
+        "start_date": "2022-03-20"
+    },
+    {
+        "employee_id": "E011",
+        "name": "Nina Kowalski",
+        "title": "Site Reliability Engineer",
+        "department": "Engineering",
+        "salary": 155000,
+        "start_date": "2023-01-09"
+    },
+    {
+        "employee_id": "E012",
+        "name": "Derek Washington",
+        "title": "CEO",
+        "department": "Executive",
+        "salary": 350000,
+        "start_date": "2017-06-01"
     }
 ]

@@ -109,7 +109,7 @@ class TestHRRecordLoader:
         loader = HRRecordLoader(path)
         docs = loader.load()
         chain = docs[0].metadata["manager_chain"]
-        assert chain == "E003,E002,E001"
+        assert chain == "E003,E002,E001,E012"
 
     def test_page_content_excludes_employee_id(self) -> None:
         path = self._write_records([
@@ -123,21 +123,22 @@ class TestHRRecordLoader:
     def test_real_hr_records_file(self) -> None:
         loader = HRRecordLoader("data/raw/hr_records.json")
         docs = loader.load()
-        assert len(docs) == 5
+        assert len(docs) == 12
         emp_ids = {d.metadata["subject_employee_id"] for d in docs}
-        assert emp_ids == {"E001", "E002", "E003", "E004", "E005"}
+        assert "E001" in emp_ids
+        assert "E012" in emp_ids
 
 
 class TestManagerChain:
 
     def test_root_employee(self) -> None:
-        chain = _build_manager_chain("E001", DEFAULT_ORG_CHART)
-        assert chain == ["E001"]
+        chain = _build_manager_chain("E012", DEFAULT_ORG_CHART)
+        assert chain == ["E012"]
 
     def test_mid_level(self) -> None:
-        chain = _build_manager_chain("E002", DEFAULT_ORG_CHART)
-        assert chain == ["E002", "E001"]
+        chain = _build_manager_chain("E001", DEFAULT_ORG_CHART)
+        assert chain == ["E001", "E012"]
 
     def test_leaf_employee(self) -> None:
         chain = _build_manager_chain("E003", DEFAULT_ORG_CHART)
-        assert chain == ["E003", "E002", "E001"]
+        assert chain == ["E003", "E002", "E001", "E012"]

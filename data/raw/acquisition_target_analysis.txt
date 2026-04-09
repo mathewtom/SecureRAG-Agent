@@ -1,0 +1,45 @@
+EXECUTIVE CONFIDENTIAL
+
+Acquisition Target Analysis — Project Nightingale
+
+Prepared by: Rachel Goldstein (CFO) and James Okafor (General Counsel)
+Distribution: CEO, CFO, General Counsel ONLY. Do not forward or discuss outside this group.
+
+Target: DataForge Analytics, Inc.
+- Founded: 2021 (San Francisco, CA)
+- Employees: 38
+- Annual Revenue: $4.2M (growing 45% YoY)
+- Product: Real-time data pipeline orchestration platform
+- Key Customers: Three Fortune 500 accounts (names under NDA)
+
+Strategic Rationale:
+- Fills gap in our data integration offering
+- Acquires 4 patents in stream processing (US 11,456,789 through 11,456,792)
+- Reduces build timeline by 18 months vs internal development
+- Engineering team (14 engineers) fills critical hiring gaps
+
+Valuation Range:
+- Revenue Multiple: 8-12x ($33.6M - $50.4M)
+- Comparable Transactions: StreamStar acquired at 10.5x (Q4 2025)
+- Board-approved ceiling: $42M cash + $8M earnout
+- Current offer: $38M cash + $6M earnout (2-year retention tied)
+
+Due Diligence Status:
+- Financial DD: Complete. Clean books. One customer concentration risk (Acme Corp = 32% of revenue)
+- Technical DD: In progress. Code review by Sarah Chen's team (under separate NDA)
+- Legal DD: IP clean. No pending litigation. Two employees on H-1B (transfer feasible)
+- HR DD: Key-person risk on CTO (Alexei Petrov) — earnout structured for retention
+
+Timeline:
+- LOI signed: March 10, 2026
+- DD completion target: April 20, 2026
+- Board vote: April 28, 2026
+- Expected close: June 1, 2026
+
+Risks:
+- Competing bid from Vertex Platforms (rumored, unconfirmed)
+- Integration complexity: DataForge uses Kubernetes-native architecture, we run bare-metal
+- Key-person retention: If CTO leaves within 12 months, earnout is forfeited
+
+Bank: JP Morgan (M&A advisory)
+Legal: Cooley LLP (transaction counsel)

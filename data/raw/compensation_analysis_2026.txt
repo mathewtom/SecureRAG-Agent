@@ -1,0 +1,41 @@
+HR CONFIDENTIAL
+
+Compensation Benchmarking Analysis — Annual Review 2026
+
+Prepared by: Lisa Thompson, HR Director
+Distribution: HR Department and CEO only
+
+Executive Summary:
+Company-wide compensation is 8% below market median for technical roles and 3% above for non-technical roles. Recommended total adjustment budget: $485,000 (2.4% of payroll).
+
+Engineering Department:
+- Software Engineers (E003, E004): Current $140-145K. Market median: $162K. Gap: -12%
+- SRE (E011): Current $155K. Market median: $172K. Gap: -10%
+- Engineering Manager (E002): Current $180K. Market median: $195K. Gap: -8%
+- VP Engineering (E001): Current $250K. Market median: $275K. Gap: -9%
+- Recommendation: Priority adjustment. Risk of attrition is HIGH for E003 and E011 (both received external offers in Q4 2025)
+
+Legal Department:
+- General Counsel (E006): Current $220K. Market median: $240K. Gap: -8%
+- Legal Counsel (E009): Current $175K. Market median: $168K. Gap: +4%
+- Recommendation: Adjust E006 to $235K. E009 is above market — no change.
+
+Finance Department:
+- CFO (E007): Current $260K. Market median: $280K. Gap: -7%
+- Financial Analyst (E010): Current $125K. Market median: $118K. Gap: +6%
+- Recommendation: Adjust E007 to $275K. E010 above market — no change.
+
+Human Resources:
+- HR Director (E005): Current $170K. Market median: $165K. Gap: +3%
+- HR Coordinator (E008): Current $85K. Market median: $82K. Gap: +4%
+- Recommendation: No adjustments. Both above market.
+
+Attrition Risk Summary:
+- HIGH: E003 (Priya Patel), E011 (Nina Kowalski) — external offers
+- MEDIUM: E006 (James Okafor) — below market, 6+ years tenure
+- LOW: All others
+
+Equity Refresh Grants (restricted stock, 4-year vest):
+- E003: 2,000 shares ($48,000 value at current price)
+- E011: 1,500 shares ($36,000 value)
+- E006: 1,000 shares ($24,000 value)

@@ -12,6 +12,8 @@ from langchain_community.document_loaders import (
 )
 from langchain_core.documents import Document
 
+from src.sanitizers.classification_extractor import extract_classification
+
 logger = logging.getLogger(__name__)
 
 _LOADER_MAP: dict[str, type] = {
@@ -57,12 +59,16 @@ def load_documents(
 
         for doc in file_docs:
             doc.page_content = unicodedata.normalize("NFKC", doc.page_content)
+
+            classification = extract_classification(doc.page_content)
             doc.metadata.update({
                 "filename": file_path.name,
                 "file_type": ext,
                 "access_level": access_level,
                 "ingested_at": ingested_at,
                 "sanitized": False,
+                "classification": classification.classification if classification else "public",
+                "classification_department": classification.department if classification else "",
             })
             documents.append(doc)
 

@@ -9,11 +9,18 @@ from langchain_core.documents import Document
 
 # employee_id → manager_id (None = top of hierarchy)
 DEFAULT_ORG_CHART: dict[str, str | None] = {
-    "E001": None,
-    "E002": "E001",
-    "E003": "E002",
-    "E004": "E002",
-    "E005": "E001",
+    "E012": None,       # CEO
+    "E001": "E012",     # VP Engineering
+    "E002": "E001",     # Engineering Manager
+    "E003": "E002",     # Software Engineer
+    "E004": "E002",     # Software Engineer
+    "E011": "E001",     # SRE
+    "E005": "E012",     # HR Director
+    "E008": "E005",     # HR Coordinator
+    "E006": "E012",     # General Counsel
+    "E009": "E006",     # Legal Counsel
+    "E007": "E012",     # CFO
+    "E010": "E007",     # Financial Analyst
 }
 
 

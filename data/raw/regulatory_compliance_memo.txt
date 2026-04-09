@@ -1,0 +1,35 @@
+LEGAL CONFIDENTIAL
+
+Regulatory Compliance Status Memo — Q1 2026
+
+From: Amy Zhao, Legal Counsel
+To: James Okafor, General Counsel
+Date: March 20, 2026
+
+1. GDPR Compliance:
+- Annual DPA review completed for all 23 EU sub-processors
+- Data Subject Access Requests (DSARs) processed in Q1: 14 (average response time: 18 days, within 30-day SLA)
+- One near-miss: Customer data from EU was temporarily replicated to us-west-2 before CloudVault geo-restriction was applied. No breach occurred. Documented in incident log GDPR-2026-003.
+- DPO (external): Margaret Sullivan, Sullivan Privacy Consulting
+
+2. SOX Compliance:
+- Q4 2025 internal controls testing complete. Two deficiencies identified:
+  a. Segregation of duties gap in AP approval workflow (Robert Walsh can both create and approve POs under $5,000). Remediated February 15 by reducing single-approval threshold to $2,000.
+  b. IT general controls: Shared admin credentials for CloudVault console. Remediated January 30 by migrating to SSO with individual credentials.
+- External audit fieldwork (Deloitte) begins April 15.
+
+3. PCI DSS:
+- Annual assessment due June 30. QSA (Coalfire) engagement confirmed.
+- Platform migration (Engineering) expected to reduce PCI scope by removing 12 systems from cardholder data environment.
+- Self-Assessment Questionnaire D submitted to acquiring bank on March 1.
+
+4. State Privacy Laws:
+- CCPA/CPRA: Opt-out mechanism updated January 15. 847 opt-out requests processed in Q1.
+- Virginia CDPA: Compliant. No enforcement actions in our sector.
+- Colorado Privacy Act: Data protection assessment completed for targeted advertising use case. Conclusion: current practices compliant.
+
+5. Upcoming Deadlines:
+- April 15: Deloitte audit fieldwork begins
+- April 30: GDPR annual training completion deadline (company-wide)
+- June 30: PCI DSS annual assessment
+- July 1: Colorado Privacy Act universal opt-out mechanism required
