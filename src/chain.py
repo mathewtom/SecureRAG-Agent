@@ -66,7 +66,7 @@ class OutputFlagged(Exception):
 def build_chain(
     chroma_persist_dir: str = "chroma_db",
     collection_name: str = "securerag",
-    model_name: str = "llama3.1:8b",
+    model_name: str = "llama3.3:70b",
     embedding_model: str = "all-MiniLM-L6-v2",
 ) -> "SecureRAGChain":
     """Build a SecureRAGChain backed by Ollama and ChromaDB."""

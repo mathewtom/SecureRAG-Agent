@@ -1,6 +1,6 @@
 # SecureRAG-Sentinel
 
-A security-hardened RAG pipeline that treats the LLM as an untrusted component. Documents are sanitized before they hit the vector store, queries are scanned for injection attempts, and responses are filtered before reaching the user. Dockerized for one-command deployment. Built with LangChain, ChromaDB, Presidio, FastAPI, and Ollama (LLaMA 3.1 8B).
+A security-hardened RAG pipeline that treats the LLM as an untrusted component. Documents are sanitized before they hit the vector store, queries are scanned for injection attempts, and responses are filtered before reaching the user. Dockerized for one-command deployment. Built with LangChain, ChromaDB, Presidio, FastAPI, and Ollama (Llama 3.3 70B).
 
 > **Rate limiting** defaults to 10 requests per 60 seconds (production). Set `SECURERAG_RATE_MODE=test` for security scanning (100k/10min). Model integrity is verified at startup via `SECURERAG_MODEL_DIGEST` (optional).
 
@@ -26,7 +26,7 @@ git clone https://github.com/mathewtom/SecureRAG-Sentinel.git
 cd SecureRAG-Sentinel
 
 # Install and start Ollama natively, then pull the models
-ollama pull llama3.1:8b
+ollama pull llama3.3:70b
 ollama pull llama-guard3:1b
 ollama serve
 
@@ -48,7 +48,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-ollama pull llama3.1:8b
+ollama pull llama3.3:70b
 ollama pull llama-guard3:1b
 ollama serve
 ```
