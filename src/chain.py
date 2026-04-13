@@ -40,8 +40,6 @@ PROMPT = PromptTemplate(
     input_variables=["context", "question", "user_role"],
 )
 
-# Static role descriptions for prompt personalization. Authoritative access
-# control still happens in the retriever and classification guard, not here.
 _USER_ROLES: dict[str, str] = {
     "E001": "Sarah Chen, VP of Engineering",
     "E002": "Marcus Rivera, Engineering Manager",
@@ -95,10 +93,7 @@ def build_chain(
     collection = client.get_collection(name=collection_name)
     embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
 
-    # Cap context window to keep VRAM usage bounded. RAG retrieves ~5 chunks
-    # of 500 chars each (~2500 tokens), so 8K is plenty with headroom for the
-    # prompt template and response. Default Ollama context (256K) would
-    # consume ~60GB of KV cache and prevent Llama Guard from staying loaded.
+    # Cap context window to bound VRAM; default 256K consumes ~60GB KV cache
     num_ctx = int(os.environ.get("SECURERAG_NUM_CTX", "8192"))
     llm_kwargs: dict = {"num_ctx": num_ctx}
     if ollama_host:
@@ -162,7 +157,6 @@ class SecureRAGChain:
         """Query with full defense stack. Returns answer and source_documents."""
         request_id = new_request_id()
 
-        # NFKC normalization — collapses fullwidth, ligatures, combining chars
         question = unicodedata.normalize("NFKC", question)
 
         # Layer 1: Rate limiting
@@ -245,12 +239,7 @@ class SecureRAGChain:
                 )
                 raise OutputFlagged(reasons=reasons)
 
-        # Output-side credential scrub (belt-and-suspenders for ingestion-time
-        # redaction). Walks both the LLM answer and every retrieved source
-        # chunk, redacting any matching credentials and audit-logging the hit
-        # with the document filename. Hits indicate either a corpus that was
-        # ingested before this detector existed, or a credential pattern the
-        # detector doesn't yet know about — both worth investigating in ops.
+        # Output-side credential scrub (belt-and-suspenders for ingestion-time redaction)
         if self._credential_detector:
             ans_result = self._credential_detector.scan(answer)
             if ans_result.credential_count > 0:

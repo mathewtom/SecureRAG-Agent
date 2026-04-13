@@ -9,10 +9,7 @@ from pydantic import BaseModel, Field
 from src.chain import build_chain, SecureRAGChain, QueryBlocked, OutputFlagged
 from src.rate_limiter import RateLimitExceeded
 
-# Hardcoded demo user identity. In production, an upstream proxy would
-# authenticate the request and inject a verified user_id. We hardcode to
-# a low-privilege Software Engineer (E003) so adversarial testing tools
-# cannot self-elevate privileges via the request body.
+# Hardcoded low-privilege identity; production would inject via upstream proxy.
 DEMO_USER_ID = os.environ.get("SECURERAG_DEMO_USER", "E003")
 
 _chain: SecureRAGChain | None = None

@@ -1,12 +1,7 @@
 """Tests for CredentialDetector.
 
-Some fixtures below are split across adjacent string literals (e.g.
-``"sk_" "live_..."``). Python concatenates these at compile time so the
-runtime value is identical to ``"sk_live_..."``, but the source file
-contains no contiguous substring matching GitHub Secret Scanning's
-patterns for Slack / Stripe / SendGrid / etc. We get to verify our
-detector against realistic credential shapes without GitHub Push
-Protection rejecting commits with fake test data.
+Some fixtures are split across adjacent string literals to avoid
+triggering GitHub Secret Scanning on fake test data.
 """
 
 import pytest
@@ -49,9 +44,7 @@ class TestCredentialDetectorPositive:
             # HuggingFace
             ("hf_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123", "HUGGINGFACE_TOKEN"),
 
-            # Slack — split across literals so source contains no contiguous
-            # match for GitHub Secret Scanning. Runtime string is identical
-            # to "xoxb-..." after compile-time string concatenation.
+            # Slack — split to avoid GitHub Secret Scanning
             ("slack: " "xox" "b-1234567890-1234567890123-aBcDeFgHiJkLmNoPqRsTuVwX", "SLACK_TOKEN"),
             ("hook: https://" "hooks.slack." "com/services/T01ABC2DEF/B01ABC2DEF/aBcDeFgHiJkLmNoPqRsTuVwX", "SLACK_WEBHOOK"),
 
@@ -131,8 +124,7 @@ class TestCredentialDetectorEdgeCases:
         self.detector = CredentialDetector()
 
     def test_exact_vendor_assessment_fixture(self) -> None:
-        """The specific text from data/raw/vendor_security_assessment.txt that
-        leaked across 81 promptfoo tests in the V1 pipeline scan."""
+        """Catches the credential format from vendor_security_assessment.txt."""
         text = (
             "API Keys (rotate quarterly):\n"
             "- Production: AKIA3XYZVENDOR9876PROD\n"
@@ -163,8 +155,6 @@ class TestCredentialDetectorEdgeCases:
         assert result.credential_count == 1
 
     def test_multiple_categories_in_same_text(self) -> None:
-        # Stripe literal split across adjacent string literals to keep
-        # GitHub Secret Scanning happy (see module docstring).
         text = (
             "AWS=AKIAIOSFODNN7EXAMPLE\n"
             "GH=ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789\n"

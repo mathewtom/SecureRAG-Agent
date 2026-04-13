@@ -24,13 +24,7 @@ _OUTPUT_CLASSIFICATION_PATTERNS: list[tuple[str, re.Pattern]] = [
 
 
 class ClassificationGuard:
-    """Checks LLM output for classification markers the user shouldn't see.
-
-    Even if the retriever correctly filtered documents, the LLM may
-    echo classification headers from context or hallucinate them.
-    This guard flags any output containing classification markers
-    above the user's clearance level.
-    """
+    """Flags output containing classification markers above the user's clearance level."""
 
     def __init__(
         self,

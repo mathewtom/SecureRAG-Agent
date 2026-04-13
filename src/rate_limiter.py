@@ -14,12 +14,8 @@ def _is_test_mode() -> bool:
     return os.environ.get("SECURERAG_RATE_MODE", "").lower() == "test"
 
 
-# In test mode (SECURERAG_RATE_MODE=test), default construction disables
-# the limiter entirely — `check()` becomes a no-op. This is what dev and
-# security-scan runs (Garak, promptfoo iterative red-team) want: hundreds
-# of requests per minute with zero 429s masking real defense behavior.
-# Explicit construction `RateLimiter(max_requests=N, ...)` is unaffected,
-# so unit tests of the mechanism still pass their own limits.
+# Test mode: default construction disables the limiter (check() becomes a no-op).
+# Explicit construction with max_requests=N still enforces limits.
 DEFAULT_MAX_REQUESTS: int | None = None if _is_test_mode() else _PROD_MAX_REQUESTS
 DEFAULT_WINDOW_SECONDS: float = _PROD_WINDOW_SECONDS
 
@@ -54,11 +50,7 @@ class RateLimiter:
         self._lock = Lock()
 
     def check(self, user_id: str) -> None:
-        """Check if user_id is within rate limits. Raises RateLimitExceeded if not.
-
-        If max_requests is None (test mode default), the limiter is disabled
-        and all requests pass through without bookkeeping.
-        """
+        """Raise RateLimitExceeded if user exceeds the sliding window. No-op if max_requests is None."""
         if self._max_requests is None:
             return
 

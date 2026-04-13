@@ -78,8 +78,6 @@ class TestRateLimiterModeSelection:
         importlib.reload(rl_mod)
         assert rl_mod.DEFAULT_MAX_REQUESTS is None
 
-        # A default-constructed limiter should no-op on check(), even under
-        # bursts that would trip any prod-sized window.
         limiter = rl_mod.RateLimiter()
         for _ in range(1000):
             limiter.check("E003")
@@ -92,10 +90,7 @@ class TestRateLimiterModeSelection:
         assert rl_mod.DEFAULT_MAX_REQUESTS is None
 
     def test_explicit_construction_still_enforces_in_test_mode(self, monkeypatch) -> None:
-        """Even in test mode, explicit max_requests still enforces a limit.
-
-        Unit tests of the mechanism pass their own limits and must keep working.
-        """
+        """Explicit max_requests still enforces limits even in test mode."""
         monkeypatch.setenv("SECURERAG_RATE_MODE", "test")
         import importlib
         import src.rate_limiter as rl_mod

@@ -135,9 +135,7 @@ class TestSecureRAGChain:
         assert "vacation policy" in call_args.lower()
 
     def test_credential_in_llm_answer_is_redacted(self) -> None:
-        """If the LLM reproduces an AWS key in its answer, the output-time
-        scrub must redact it before returning. This regression-tests the
-        2/165 cases from promptfoo V1 pipeline where the LLM itself leaked."""
+        """Regression: credentials in LLM answers must be redacted."""
         self.mock_llm.invoke.return_value = (
             "The production key is AKIA3XYZVENDOR9876PROD per the vendor doc."
         )
@@ -156,14 +154,8 @@ class TestSecureRAGChain:
         assert "[AWS_ACCESS_KEY_REDACTED]" in result["answer"]
 
     def test_credential_in_source_documents_is_redacted(self) -> None:
-        """If a retrieved chunk contains a credential (because ingestion
-        sanitizer didn't catch it, or content predates the credential
-        detector), the output-time scrub must redact it in source_documents
-        before returning. This regression-tests the 79/165 cases from
-        promptfoo V1 pipeline where the LLM refused but the API still
-        shipped the credential in source_documents[]."""
-        # Add a chunk with a credential that bypassed ingestion. Use a
-        # separate collection so we don't pollute the class fixture.
+        """Regression: credentials in source_documents must be redacted."""
+        # Separate collection with a credential that bypassed ingestion
         leaky_client = chromadb.Client()
         leaky_collection = leaky_client.create_collection(
             name="test_chain_leak",
@@ -177,8 +169,6 @@ class TestSecureRAGChain:
             documents=[leaky_text],
             metadatas=[{
                 "filename": "vendor_security_assessment.txt",
-                # E003 is in Engineering — she's authorized to retrieve this
-                # chunk. The credential leak is what we want the scrub to catch.
                 "classification": "engineering_confidential",
             }],
             ids=["leak_0"],

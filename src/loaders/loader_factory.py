@@ -27,11 +27,7 @@ def load_documents(
     source_dir: str | Path,
     access_level: str = "internal",
 ) -> list[Document]:
-    """Walk source_dir, load supported files, and enrich metadata.
-
-    Unsupported extensions are skipped. Errors on individual files are
-    logged and skipped (fail-closed).
-    """
+    """Walk source_dir, load supported files, and enrich metadata."""
     source_path = Path(source_dir)
     if not source_path.is_dir():
         raise FileNotFoundError(f"Source directory not found: {source_dir}")

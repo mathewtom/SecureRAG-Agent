@@ -23,11 +23,7 @@ class GateResult:
 
 
 class SanitizationGate:
-    """Four-phase scan pipeline: regex injection → embedding similarity → PII → credentials.
-
-    Injection or embedding hits quarantine immediately and skip remaining scans.
-    Clean documents are stamped with sanitized=True and a UTC timestamp.
-    """
+    """Multi-phase scan pipeline: injection → embedding → PII → credentials."""
 
     def __init__(self, embedding_function=None) -> None:
         self._injection_scanner = InjectionScanner()

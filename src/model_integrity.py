@@ -24,13 +24,7 @@ def verify_model_digest(
     ollama_host: str | None = None,
     expected_digest: str | None = None,
 ) -> str:
-    """Verify the Ollama model digest against a pinned value.
-
-    If SECURERAG_MODEL_DIGEST is not set and no expected_digest is provided,
-    verification is skipped (returns the actual digest for informational use).
-
-    Returns the actual digest prefix.
-    """
+    """Verify the Ollama model digest against a pinned value. Returns the actual digest prefix."""
     host = ollama_host or os.environ.get("OLLAMA_HOST", "http://localhost:11434")
     pinned = expected_digest or os.environ.get("SECURERAG_MODEL_DIGEST")
 

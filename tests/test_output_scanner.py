@@ -6,7 +6,6 @@ from src.sanitizers.output_scanner import OutputScanner, OutputScanResult
 
 
 class TestOutputScannerFastPath:
-    """Fast-path tests run without Ollama dependency."""
 
     def setup_method(self) -> None:
         self.scanner = OutputScanner()
@@ -69,7 +68,6 @@ class TestOutputScannerFastPath:
 
 
 class TestOutputScannerSemantic:
-    """Integration tests requiring Ollama with llama-guard3:1b."""
 
     @pytest.mark.integration
     def test_safe_output_passes_semantic(self) -> None:

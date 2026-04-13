@@ -1,16 +1,4 @@
-"""Credential / secret detection — regex patterns for common API keys and tokens.
-
-This is a separate component from PIIDetector because the threat model differs:
-PII = identifying information about people (handled by Presidio NER + custom regex);
-credentials = strings that authenticate to services and grant programmatic access.
-
-Patterns are deliberately tight (anchored prefixes, length bounds) to keep false
-positives low. Generic "high-entropy string" detectors are intentionally NOT
-included — they produce too much noise on normal text. The trade-off is that
-truly novel credential formats won't be caught here; the second line of defense
-is the output-side scrub at chain.py which runs the same patterns on responses
-before they leave the API.
-"""
+"""Credential / secret detection — regex patterns for common API keys and tokens."""
 
 import re
 from collections.abc import Callable
@@ -26,17 +14,6 @@ class CredentialScanResult:
 
 
 # (category, compiled_pattern, optional_validator)
-#
-# Notes on the AWS pattern: real AWS access key IDs are exactly AKIA + 16
-# alphanumerics (20 chars total). The fixture corpus uses non-conforming mock
-# keys like AKIA3XYZVENDOR9876PROD (22 chars) which the strict 16-char pattern
-# misses. We loosen the suffix to {12,40} so common test/example formats are
-# also caught — this matches how production secret scanners (e.g. detect-secrets,
-# truffleHog) usually phrase their AWS rules. Real keys are still in scope.
-#
-# The Anthropic + OpenAI patterns use a negative lookahead to avoid double-
-# matching: anything starting `sk-ant-` is captured as ANTHROPIC_API_KEY
-# rather than spilling into OPENAI_API_KEY.
 _REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
     # ── AWS ──
     (
@@ -68,8 +45,6 @@ _REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
     ),
     (
         "OPENAI_API_KEY",
-        # Catches the legacy `sk-...` format. Negative lookahead avoids
-        # matching ant/proj/svcacct variants (each handled above).
         re.compile(r"\bsk-(?!ant-|proj-|svcacct-)[A-Za-z0-9]{32,}\b"),
         None,
     ),
@@ -86,7 +61,7 @@ _REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
     ),
     (
         "GITHUB_OAUTH_TOKEN",
-        # gho_ user-to-server, ghu_ user oauth, ghs_ server-to-server, ghr_ refresh
+        # gho_/ghu_/ghs_/ghr_ variants
         re.compile(r"\bgh[ousr]_[A-Za-z0-9]{36}\b"),
         None,
     ),
@@ -105,7 +80,7 @@ _REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
     # ── Slack ──
     (
         "SLACK_TOKEN",
-        # Covers xoxa/xoxb/xoxp/xoxr/xoxs/xoxo
+        # xoxa/xoxb/xoxp/xoxr/xoxs/xoxo
         re.compile(r"\bxox[abprso]-[A-Za-z0-9-]{20,}\b"),
         None,
     ),
@@ -125,7 +100,7 @@ _REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
     # ── Twilio ──
     (
         "TWILIO_KEY",
-        # AC = account SID, SK = standalone secret key — both 32 hex
+        # AC (account SID) or SK (secret key), 32 hex
         re.compile(r"\b(?:AC|SK)[a-f0-9]{32}\b"),
         None,
     ),
@@ -155,16 +130,14 @@ _REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
     # ── JWT ──
     (
         "JWT",
-        # Three base64url segments separated by dots, header always starts eyJ
+        # Three base64url segments, header starts eyJ
         re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
         None,
     ),
     # ── Private keys ──
     (
         "PRIVATE_KEY",
-        # Catches RSA, EC, OPENSSH, DSA, PGP private key block headers.
-        # Matches just the header line; downstream redaction will replace
-        # the line, which is enough to flag/break the key block.
+        # Private key block headers (RSA, EC, OPENSSH, DSA, PGP)
         re.compile(
             r"-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----"
         ),
@@ -174,13 +147,7 @@ _REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
 
 
 class CredentialDetector:
-    """Detects API keys, tokens, and other credentials in text via regex.
-
-    Mirrors the shape of PIIDetector so the two can be used interchangeably
-    by the SanitizationGate. Output-side scrubbing in chain.py uses the same
-    detector to belt-and-suspenders any credentials that slip past ingestion
-    (e.g. content added to Chroma before this detector existed).
-    """
+    """Detects API keys, tokens, and other credentials in text via regex."""
 
     def scan(self, text: str) -> CredentialScanResult:
         """Scan text for credentials and return redacted text with match metadata."""
@@ -197,9 +164,7 @@ class CredentialDetector:
                 categories.add(category)
                 credential_count += 1
 
-        # De-duplicate overlapping spans (longer / earlier wins). Two patterns
-        # could in principle match the same substring; preserve the first hit
-        # by start index and skip any later span that overlaps it.
+        # De-duplicate overlapping spans (longer / earlier wins)
         spans.sort(key=lambda s: (s[0], -s[1]))
         deduped: list[tuple[int, int, str]] = []
         last_end = -1
@@ -211,7 +176,7 @@ class CredentialDetector:
                 # Overlap — back out the count we added above
                 credential_count -= 1
 
-        # Replace right-to-left to preserve indices
+        # Replace right-to-left to preserve offsets
         for start, end, category in sorted(deduped, key=lambda s: s[0], reverse=True):
             redacted = redacted[:start] + f"[{category}_REDACTED]" + redacted[end:]
 

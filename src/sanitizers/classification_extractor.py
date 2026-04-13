@@ -24,12 +24,7 @@ _CLASSIFICATION_PATTERNS: list[tuple[re.Pattern, str, str]] = [
 
 
 def extract_classification(text: str) -> ClassificationResult | None:
-    """Scan the first 500 characters of text for classification markers.
-
-    Only checks the document header region to avoid false positives
-    from classification markers mentioned in body text.
-    Returns None if no marker is found (document is unclassified).
-    """
+    """Scan the first 500 characters for classification markers. Returns None if unclassified."""
     header = text[:500]
 
     for pattern, classification, department in _CLASSIFICATION_PATTERNS:

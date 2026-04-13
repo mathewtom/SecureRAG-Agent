@@ -28,7 +28,7 @@ def _build_manager_chain(
     employee_id: str,
     org_chart: dict[str, str | None],
 ) -> list[str]:
-    """Walk up the org chart to root. E.g., E003 → ["E003", "E002", "E001"]."""
+    """Walk up the org chart to root, returning the full chain."""
     chain: list[str] = []
     current = employee_id
     visited: set[str] = set()

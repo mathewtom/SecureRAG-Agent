@@ -48,16 +48,7 @@ DEFAULT_CLASSIFICATION_ACCESS: dict[str, set[str]] = {
 
 
 class AccessControlledRetriever:
-    """Filters ChromaDB results by org-chart and department visibility.
-
-    Three access dimensions evaluated per query:
-    1. Policy documents: visible to all authenticated users
-    2. HR records: visible to subject + management chain (org-chart BFS)
-    3. Classified documents: visible based on department membership
-
-    Executive department sees all classified documents.
-    Fail-closed: unknown users and untyped documents are excluded.
-    """
+    """Filters ChromaDB results by org-chart, department, and classification visibility."""
 
     def __init__(
         self,

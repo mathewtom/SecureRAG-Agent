@@ -30,11 +30,7 @@ def log_denial(
     question: str | None = None,
     details: dict | None = None,
 ) -> dict:
-    """Emit a structured JSON log entry for a denial event.
-
-    Accepts either a pre-computed question_hash or raw question (hashed here).
-    Returns the log record for testability.
-    """
+    """Emit a structured JSON log entry for a denial event. Returns the record."""
     if question_hash is None and question is not None:
         question_hash = _question_hash(question)
 
