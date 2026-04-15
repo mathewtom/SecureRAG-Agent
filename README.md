@@ -66,9 +66,13 @@ docker compose up api -d
 
 The API serves on `http://localhost:8000`. Pipeline reads documents from `data/raw/` on your host (mounted read-only) and writes embeddings to a shared Docker volume that the API container reads from. Both containers reach the host Ollama instance via `host.docker.internal`.
 
+The Dockerfile installs from [`requirements.lock`](requirements.lock) with `uv pip install --require-hashes`. Every package is pinned to an exact version and SHA-256 hash; the build fails closed if the lockfile is missing a hash or an upstream wheel has been tampered with. Same fail-closed principle as the Ollama model digest pin at startup.
+
 ### Local Setup (without Docker)
 
 Requires Python 3.12+ and [Ollama](https://ollama.com).
+
+**Zero-dependency path (stdlib venv + pip):**
 
 ```bash
 python -m venv .venv
@@ -79,6 +83,16 @@ ollama pull llama3.3:70b
 ollama pull llama-guard3:1b
 ollama serve
 ```
+
+**Faster path ([uv](https://github.com/astral-sh/uv), optional):**
+
+```bash
+uv venv --python 3.12
+source .venv/bin/activate
+uv pip install --require-hashes --requirement requirements.lock
+```
+
+The lockfile is pinned to Linux x86_64 (matching the Docker base image). If you're on macOS or another platform, use `requirements.txt` instead, or regenerate with `uv pip compile requirements.txt -o requirements.lock --generate-hashes --python-version 3.12 --python-platform <your-platform>`.
 
 ```bash
 python -m src.pipeline                                    # ingest
