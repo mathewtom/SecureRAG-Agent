@@ -1,3 +1,30 @@
+[project]
+name = "securerag-agent"
+version = "0.1.0"
+description = "Security-hardened agentic RAG pipeline with tool-level access control. Fork of SecureRAG-Sentinel adapted for agentic threat model."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain",
+    "langchain-community",
+    "langchain-huggingface",
+    "chromadb",
+    "sentence-transformers",
+    "presidio-analyzer",
+    "presidio-anonymizer",
+    "pypdf",
+    "ollama",
+    "httpx",
+    "fastapi",
+    "uvicorn",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
 [tool.pytest.ini_options]
 markers = [
     "integration: requires Ollama with llama-guard3:1b",
