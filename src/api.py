@@ -6,7 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from src.chain import build_chain, SecureRAGChain, QueryBlocked, OutputFlagged
+from src.chain import build_chain, SecureRAGChain
+from src.exceptions import QueryBlocked, OutputFlagged
 from src.rate_limiter import RateLimitExceeded
 
 # Hardcoded low-privilege identity; production would inject via upstream proxy.
