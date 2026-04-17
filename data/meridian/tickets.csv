@@ -1,0 +1,83 @@
+ticket_id,title,owner_id,assignee_id,status,classification,project_id,created_at,type
+T001,Laptop replacement request - 2019 MacBook battery failing,E003,E031,resolved,2,,2026-02-04,it
+T002,VPN access broken after macOS update,E028,E031,resolved,2,,2026-02-09,it
+T003,Request: GitHub org admin for new repo,E029,E018,resolved,2,P004,2026-01-22,it
+T004,Okta SSO loop on Salesforce,E037,E031,closed,2,,2026-02-14,it
+T005,New monitor for ergonomic accommodation,E044,E031,in_progress,2,,2026-03-11,it
+T006,Mailing list permission - all-engineering@,E030,E018,resolved,2,,2026-02-01,it
+T007,Slack workspace guest access for vendor,E032,E033,resolved,2,P016,2026-03-02,it
+T008,SSO recovery for locked-out account,E040,E031,closed,2,,2026-02-19,it
+T009,Datacenter VPN cert renewal,E011,E031,in_progress,2,P002,2026-03-15,it
+T010,Yubikey replacement after loss,E022,E033,resolved,2,,2026-01-30,it
+T011,Microsoft 365 license upgrade for Sales,E021,E031,resolved,2,P008,2026-02-28,it
+T012,New starter laptop provisioning - Q2 cohort,E044,E031,in_progress,2,,2026-04-02,it
+T013,Production database read replica access,E028,E018,open,3,P004,2026-04-08,it
+T014,VS Code remote SSH config not working,E030,E018,resolved,2,,2026-02-25,it
+T015,Email distribution list cleanup,E044,E031,open,2,,2026-04-01,it
+T016,Benefits enrollment question - dependent coverage,E028,E044,resolved,3,,2026-01-19,hr
+T017,Performance improvement plan draft - direct report,E002,E026,in_progress,3,,2026-03-20,hr
+T018,Voluntary resignation - notice acceptance,E040,E026,closed,3,,2026-01-15,hr
+T019,Comp band review request after promotion,E029,E018,resolved,3,,2026-02-12,hr
+T020,Parental leave coordination,E034,E044,in_progress,3,,2026-03-08,hr
+T021,Expense reimbursement appeal - conference travel,E037,E026,resolved,2,,2026-02-22,hr
+T022,Workstation accessibility accommodation,E044,E026,in_progress,3,,2026-03-11,hr
+T023,Concern raised about manager conduct,E040,E005,in_progress,4,,2026-03-25,hr
+T024,Visa sponsorship renewal - L1 to green card,E028,E026,in_progress,3,,2026-02-08,hr
+T025,Annual compensation review packet preparation,E001,E005,in_progress,4,,2026-04-01,hr
+T026,Anonymous concern: budget pressure on team,E044,E005,resolved,4,,2026-02-26,hr
+T027,Severance package questions - Phoenix wind-down,E018,E026,closed,4,P003,2025-12-08,hr
+T028,Background check delay for new hire,E044,E026,resolved,3,,2026-03-04,hr
+T029,Holiday calendar coordination - global teams,E044,E044,resolved,1,,2026-01-09,hr
+T030,New hire onboarding - April cohort planning,E044,E026,in_progress,2,,2026-03-20,hr
+T031,Suspicious phishing email reported,E040,E033,resolved,3,,2026-02-17,security
+T032,Failed login alerts on contractor account,E033,E033,resolved,3,,2026-03-01,security
+T033,Access review - Engineering production grants,E018,E032,in_progress,3,P002,2026-03-22,security
+T034,Quarterly access review - Finance systems,E024,E032,resolved,3,P016,2026-02-28,security
+T035,Vendor security questionnaire - Acme Analytics,E037,E032,in_progress,3,P016,2026-03-19,security
+T036,Suspicious outbound traffic from CI runner,E031,E033,resolved,3,P010,2026-02-08,security
+T037,DLP alert: SSN-shaped string in Slack,E033,E033,resolved,3,,2026-03-13,security
+T038,GitHub leaked secret - revoked and rotated,E030,E032,resolved,3,P004,2026-03-05,security
+T039,Pen test scoping for Atlas Mobile,E020,E032,in_progress,3,P007,2026-04-03,security
+T040,Bug bounty triage - reflected XSS report,E033,E033,resolved,3,P001,2026-02-26,security
+T041,RESTRICTED - investigation: data exfil suspicion,E016,E019,in_progress,4,P010,2026-03-30,security
+T042,SOC 2 evidence collection - Q1,E033,E042,in_progress,3,P014,2026-03-18,security
+T043,MFA enforcement gap on legacy admin console,E032,E018,open,3,P002,2026-04-05,security
+T044,Phishing simulation results - Sales cohort,E033,E021,resolved,2,,2026-02-19,security
+T045,Hardware token inventory audit,E033,E033,in_progress,2,,2026-03-15,security
+T046,Bug: tenancy header dropped during retry,E003,E003,in_progress,2,P004,2026-04-01,engineering
+T047,Performance regression in /search endpoint p99,E028,E028,in_progress,2,P001,2026-03-26,engineering
+T048,Feature: bulk export for Atlas Mobile,E034,E028,open,2,P007,2026-04-08,engineering
+T049,Tech debt: deprecate legacy auth shim,E029,E029,in_progress,2,P004,2026-03-30,engineering
+T050,Chaos game day prep - Phoenix 2.0 cutover,E011,E031,in_progress,2,P004,2026-04-05,engineering
+T051,Customer-reported bug: timezone offset on reports,E034,E030,resolved,2,P015,2026-02-22,engineering
+T052,Refactor Voyager ingest to use new SDK,E029,E030,in_progress,2,P015,2026-03-12,engineering
+T053,Add audit log streaming to S3,E018,E029,in_progress,2,P002,2026-03-09,engineering
+T054,Migrate Phoenix services off deprecated metrics lib,E031,E031,resolved,2,P003,2025-11-18,engineering
+T055,Investigate flaky integration tests,E028,E028,in_progress,2,P001,2026-03-15,engineering
+T056,Helix HRIS data migration scripts,E018,E029,in_progress,3,P006,2026-02-26,engineering
+T057,Fortress runbook automation - paging rules,E033,E029,in_progress,3,P010,2026-03-22,engineering
+T058,Beacon CRM webhook delivery failures,E039,E028,open,2,P009,2026-04-04,engineering
+T059,Customer data platform schema review,E020,E029,resolved,3,P015,2026-02-15,engineering
+T060,Compass dashboard load time regression,E021,E028,in_progress,2,P008,2026-03-28,engineering
+T061,Feature: configurable rate limits per tenant,E003,E003,open,2,P004,2026-04-09,engineering
+T062,API gateway upgrade compatibility audit,E018,E018,in_progress,2,P001,2026-03-20,engineering
+T063,Database connection pool tuning,E031,E031,resolved,2,P001,2026-02-12,engineering
+T064,Log retention policy implementation,E033,E029,in_progress,3,P002,2026-03-25,engineering
+T065,Vendor MSA review - Acme Analytics,E021,E009,in_progress,3,P016,2026-03-22,legal
+T066,NDA template update for partner program,E020,E042,resolved,2,,2026-02-08,legal
+T067,Customer data processing addendum review,E022,E042,in_progress,3,P008,2026-03-15,legal
+T068,DPA negotiation - EU customer requirement,E022,E009,in_progress,3,,2026-03-28,legal
+T069,Open source license review - Voyager dependencies,E029,E043,resolved,2,P015,2026-02-19,legal
+T070,Trademark filing for Aurora,E013,E042,in_progress,3,P005,2026-03-04,legal
+T071,Subpoena response coordination,E006,E009,in_progress,4,,2026-03-30,legal
+T072,Contractor agreement template revision,E026,E043,resolved,2,,2026-02-26,legal
+T073,Q1 expense report rejection - missing receipts,E028,E041,resolved,2,,2026-02-15,finance
+T074,Vendor onboarding - Acme Analytics,E021,E041,in_progress,3,P016,2026-03-22,finance
+T075,Budget reforecast - Engineering Q2,E001,E024,in_progress,3,,2026-03-25,finance
+T076,Travel pre-approval workflow change request,E022,E041,resolved,2,,2026-02-28,finance
+T077,Corporate card limit increase request,E021,E024,resolved,2,,2026-03-08,finance
+T078,Wire transfer authorization - vendor payout,E007,E024,closed,3,,2026-02-19,finance
+T079,Audit prep - revenue recognition Q1,E024,E010,in_progress,3,P012,2026-03-15,finance
+T080,Procurement: Atlas Mobile pen test,E020,E041,in_progress,3,P007,2026-04-03,finance
+T081,Reimbursement appeal - personal device on travel,E028,E041,resolved,2,,2026-03-12,finance
+T082,Amortization schedule revision,E024,E010,in_progress,3,,2026-03-29,finance

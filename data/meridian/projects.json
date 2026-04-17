@@ -1,0 +1,162 @@
+[
+  {
+    "project_id": "P001",
+    "name": "Project Atlas",
+    "owner_id": "E001",
+    "members": ["E002", "E003", "E004", "E018", "E027", "E029", "E034"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2024-08-01",
+    "description": "Core distributed services platform. Backbone of every customer-facing product."
+  },
+  {
+    "project_id": "P002",
+    "name": "Nebula",
+    "owner_id": "E016",
+    "members": ["E019", "E032", "E033", "E011"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2025-01-13",
+    "description": "Security platform modernization. Replaces three legacy SIEM and EDR tools with a unified detection plane."
+  },
+  {
+    "project_id": "P003",
+    "name": "Phoenix",
+    "owner_id": "E018",
+    "members": ["E003", "E004", "E029", "E031"],
+    "classification": "CONFIDENTIAL",
+    "status": "completed",
+    "start_date": "2024-11-04",
+    "description": "Migration off the legacy monolith to the Atlas service mesh. Completed 2025-Q4 with the postmortem in project_phoenix_postmortem.md."
+  },
+  {
+    "project_id": "P004",
+    "name": "Phoenix 2.0",
+    "owner_id": "E018",
+    "members": ["E003", "E027", "E028", "E030", "E031"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2026-01-20",
+    "description": "Successor effort to Phoenix. Re-architects the auth and tenancy layer that Phoenix deferred."
+  },
+  {
+    "project_id": "P005",
+    "name": "Aurora",
+    "owner_id": "E013",
+    "members": ["E020", "E034", "E035", "E029"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2025-09-08",
+    "description": "New product line targeting mid-market analytics. Pre-launch; positioning is a closely held secret."
+  },
+  {
+    "project_id": "P006",
+    "name": "Helix",
+    "owner_id": "E005",
+    "members": ["E008", "E026", "E044", "E018"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2025-06-02",
+    "description": "Replacement of the legacy HRIS. Touches sensitive employee records during cutover."
+  },
+  {
+    "project_id": "P007",
+    "name": "Atlas Mobile",
+    "owner_id": "E020",
+    "members": ["E004", "E028", "E030", "E034"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2026-02-09",
+    "description": "Mobile client spin-off of the Atlas core platform. Naming intentionally mirrors the parent project."
+  },
+  {
+    "project_id": "P008",
+    "name": "Compass",
+    "owner_id": "E014",
+    "members": ["E021", "E022", "E036", "E037", "E038"],
+    "classification": "INTERNAL",
+    "status": "active",
+    "start_date": "2025-10-15",
+    "description": "Sales enablement platform. Deal collateral, playbooks, and pricing tooling."
+  },
+  {
+    "project_id": "P009",
+    "name": "Beacon",
+    "owner_id": "E015",
+    "members": ["E023", "E039", "E040"],
+    "classification": "INTERNAL",
+    "status": "active",
+    "start_date": "2025-11-03",
+    "description": "Marketing automation overhaul. Drip campaigns, attribution, and CRM integration."
+  },
+  {
+    "project_id": "P010",
+    "name": "Fortress",
+    "owner_id": "E016",
+    "members": ["E019", "E032", "E033"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2025-07-21",
+    "description": "Internal incident response platform. Implements the IR playbook end to end."
+  },
+  {
+    "project_id": "P011",
+    "name": "Horizon",
+    "owner_id": "E012",
+    "members": ["E007", "E006", "E017", "E024"],
+    "classification": "RESTRICTED",
+    "status": "active",
+    "start_date": "2026-02-01",
+    "description": "Acquisition target evaluation. Identity of the target is restricted to the listed members."
+  },
+  {
+    "project_id": "P012",
+    "name": "Cascade",
+    "owner_id": "E007",
+    "members": ["E024", "E010", "E041", "E018"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2025-12-01",
+    "description": "Billing and revenue recognition migration. Crosses Finance and Engineering domains."
+  },
+  {
+    "project_id": "P013",
+    "name": "Meridian-X",
+    "owner_id": "E012",
+    "members": ["E017", "E013", "E001"],
+    "classification": "RESTRICTED",
+    "status": "on_hold",
+    "start_date": "2025-04-12",
+    "description": "Skunkworks initiative. Currently on hold pending Horizon outcome."
+  },
+  {
+    "project_id": "P014",
+    "name": "Trinity",
+    "owner_id": "E006",
+    "members": ["E025", "E009", "E042", "E043", "E033"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2025-08-19",
+    "description": "Compliance automation across SOC 2, ISO 27001, and GDPR controls."
+  },
+  {
+    "project_id": "P015",
+    "name": "Voyager",
+    "owner_id": "E020",
+    "members": ["E034", "E035", "E029", "E030"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2025-05-26",
+    "description": "Customer data platform. Unifies behavioral, transactional, and support telemetry."
+  },
+  {
+    "project_id": "P016",
+    "name": "Harbor",
+    "owner_id": "E032",
+    "members": ["E033", "E019", "E043"],
+    "classification": "CONFIDENTIAL",
+    "status": "active",
+    "start_date": "2025-03-10",
+    "description": "Vendor security assessment program. Owns third-party risk reviews and continuous monitoring."
+  }
+]

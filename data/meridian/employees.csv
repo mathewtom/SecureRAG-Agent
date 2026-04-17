@@ -1,0 +1,46 @@
+employee_id,name,title,department,manager_id,clearance_level,location,hire_date,email,salary,is_active
+E001,Sarah Chen,VP of Engineering,Engineering,E012,4,San Francisco,2019-03-15,sarah.chen@meridian.corp,250000,true
+E002,Marcus Rivera,"Engineering Manager, Backend",Engineering,E001,3,San Francisco,2020-07-01,marcus.rivera@meridian.corp,180000,true
+E003,Priya Patel,Senior Software Engineer,Engineering,E002,2,San Francisco,2022-01-10,priya.patel@meridian.corp,165000,true
+E004,David Kim,Software Engineer II,Engineering,E002,2,San Francisco,2022-06-20,david.kim@meridian.corp,150000,true
+E005,Lisa Thompson,VP of People,Human Resources,E012,4,New York,2021-04-05,lisa.thompson@meridian.corp,215000,true
+E006,James Okafor,General Counsel,Legal,E012,4,New York,2020-01-15,james.okafor@meridian.corp,245000,true
+E007,Rachel Goldstein,Chief Financial Officer,Finance,E012,4,New York,2018-11-01,rachel.goldstein@meridian.corp,285000,true
+E008,Carlos Mendez,HR Coordinator,Human Resources,E026,3,New York,2023-02-14,carlos.mendez@meridian.corp,92000,true
+E009,Amy Zhao,Senior Legal Counsel,Legal,E025,3,New York,2021-09-01,amy.zhao@meridian.corp,188000,true
+E010,Robert Walsh,Senior Financial Analyst,Finance,E024,2,New York,2022-03-20,robert.walsh@meridian.corp,135000,true
+E011,Nina Kowalski,Staff Site Reliability Engineer,Engineering,E018,3,Remote (Austin),2023-01-09,nina.kowalski@meridian.corp,190000,true
+E012,Derek Washington,Chief Executive Officer,Executive,,4,New York,2017-06-01,derek.washington@meridian.corp,420000,true
+E013,Miranda Okonkwo,VP of Product,Product,E012,4,San Francisco,2020-09-14,miranda.okonkwo@meridian.corp,235000,true
+E014,Michael Anderson,VP of Sales,Sales,E012,4,New York,2019-10-21,michael.anderson@meridian.corp,240000,true
+E015,Helena Brooks,VP of Marketing,Marketing,E012,4,San Francisco,2021-02-08,helena.brooks@meridian.corp,225000,true
+E016,Natasha Volkov,Chief Information Security Officer,Security,E012,4,Remote (Boston),2022-05-02,natasha.volkov@meridian.corp,265000,true
+E017,Thomas Reyes,Chief Operating Officer,Executive,E012,4,New York,2018-04-30,thomas.reyes@meridian.corp,310000,true
+E018,Raj Srinivasan,"Engineering Manager, Platform",Engineering,E001,3,San Francisco,2021-08-16,raj.srinivasan@meridian.corp,185000,true
+E019,Soo-Jin Park,"Engineering Manager, Security Engineering",Security,E016,3,Remote (Seattle),2022-11-07,soo-jin.park@meridian.corp,195000,true
+E020,Aditya Menon,Director of Product,Product,E013,3,San Francisco,2021-03-22,aditya.menon@meridian.corp,190000,true
+E021,Kelly O'Brien,"Director of Sales, Americas",Sales,E014,3,New York,2020-06-11,kelly.obrien@meridian.corp,198000,true
+E022,Yasmin Farsi,"Director of Sales, EMEA",Sales,E014,3,London,2021-01-18,yasmin.farsi@meridian.corp,195000,true
+E023,Liam Sutherland,Director of Marketing,Marketing,E015,3,San Francisco,2022-02-28,liam.sutherland@meridian.corp,175000,true
+E024,Jennifer Anderson,Director of Finance,Finance,E007,3,New York,2019-07-08,jennifer.anderson@meridian.corp,205000,true
+E025,Rebecca Tam,Director of Legal,Legal,E006,3,New York,2020-11-02,rebecca.tam@meridian.corp,198000,true
+E026,Brendan Walsh,HR Manager,Human Resources,E005,3,New York,2021-10-12,brendan.walsh@meridian.corp,148000,true
+E027,David Anderson,Senior Software Engineer,Engineering,E002,2,San Francisco,2021-11-08,david.anderson@meridian.corp,170000,true
+E028,Yuki Tanaka,Software Engineer II,Engineering,E002,2,Remote (Tokyo),2023-03-14,yuki.tanaka@meridian.corp,145000,true
+E029,Olumide Adeyemi,Staff Software Engineer,Engineering,E018,3,Remote (Lagos),2020-12-01,olumide.adeyemi@meridian.corp,210000,true
+E030,Katrin Lindqvist,Software Engineer,Engineering,E018,2,Remote (Stockholm),2023-09-04,katrin.lindqvist@meridian.corp,138000,true
+E031,Diego Ramirez,Site Reliability Engineer,Engineering,E018,2,Remote (Mexico City),2023-05-22,diego.ramirez@meridian.corp,152000,true
+E032,Fatima Al-Hassan,Senior Security Engineer,Security,E019,3,Remote (Dubai),2022-07-18,fatima.al-hassan@meridian.corp,178000,true
+E033,Connor McBride,Security Engineer,Security,E019,3,Remote (Dublin),2023-08-07,connor.mcbride@meridian.corp,155000,true
+E034,Ravi Joshi,Product Manager,Product,E020,2,San Francisco,2022-09-26,ravi.joshi@meridian.corp,155000,true
+E035,Elena Vasquez,Senior Product Manager,Product,E020,3,San Francisco,2020-04-13,elena.vasquez@meridian.corp,178000,true
+E036,Tyler Jensen,Account Executive,Sales,E021,2,Chicago,2023-04-17,tyler.jensen@meridian.corp,118000,true
+E037,Beatriz Santos,Senior Account Executive,Sales,E021,2,Miami,2021-06-28,beatriz.santos@meridian.corp,142000,true
+E038,Ingrid Haugen,"Account Executive, EMEA",Sales,E022,2,London,2022-10-03,ingrid.haugen@meridian.corp,128000,true
+E039,Marcus Chen,Marketing Manager,Marketing,E023,2,San Francisco,2022-12-05,marcus.chen@meridian.corp,135000,true
+E040,Sophie Tremblay,Content Marketing Specialist,Marketing,E023,1,Remote (Montreal),2023-11-20,sophie.tremblay@meridian.corp,92000,true
+E041,Haruki Yamamoto,Financial Analyst,Finance,E024,2,New York,2023-07-10,haruki.yamamoto@meridian.corp,112000,true
+E042,Grace Mbeki,Senior Legal Counsel,Legal,E025,3,"Remote (Johannesburg)",2022-04-11,grace.mbeki@meridian.corp,180000,true
+E043,Arjun Desai,Paralegal,Legal,E025,2,New York,2024-01-08,arjun.desai@meridian.corp,82000,true
+E044,Leila Hosseini,People Operations Specialist,Human Resources,E026,2,New York,2023-10-16,leila.hosseini@meridian.corp,98000,true
+E045,Oscar Pettersson,Executive Assistant to CEO,Executive,E017,3,New York,2019-08-22,oscar.pettersson@meridian.corp,115000,true
