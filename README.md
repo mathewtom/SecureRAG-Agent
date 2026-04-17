@@ -17,9 +17,10 @@ of what the prompt "promises." Symbolic guarantees (explicit checks, BFS
 org traversal, metadata filters) sit underneath neural defenses (Llama
 Guard, embedding similarity, prompt rules), never the other way around.
 
-Reading order: [`CLAUDE.md`](CLAUDE.md) for the durable architectural
-principles, then [`docs/AGENTIC_PIVOT_PLAN.md`](docs/AGENTIC_PIVOT_PLAN.md)
-for the phased plan.
+Reading order: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the
+durable architectural principles and codebase conventions, then
+[`docs/AGENTIC_PIVOT_PLAN.md`](docs/AGENTIC_PIVOT_PLAN.md) for the
+phased plan.
 
 ## Project plan
 
@@ -43,7 +44,8 @@ for the phased plan.
   the rationale, and that no changes flow back upstream.
 - Dependency management consolidated to `uv` with hash-pinned `uv.lock`
   (the inherited `requirements.txt` + `requirements.lock` pair was
-  retired to align with [`CLAUDE.md`](CLAUDE.md)).
+  retired to align with the conventions in
+  [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
 
 ### Phase 1 — Meridian dataset (agentic edition)
 
@@ -142,14 +144,15 @@ uv run pytest -q         # smoke
 ```
 
 Python 3.12+. Ollama running locally with `llama3.1:8b` for development,
-`llama3.3:70b` for evaluation runs (per [`CLAUDE.md`](CLAUDE.md)).
+`llama3.3:70b` for evaluation runs (see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full conventions).
 
 ## Repository layout (current)
 
 ```
 .
-├── CLAUDE.md                       # durable architectural principles
 ├── docs/
+│   ├── ARCHITECTURE.md             # durable architectural principles + conventions
 │   ├── AGENTIC_PIVOT_PLAN.md       # phased plan (authoritative roadmap)
 │   ├── DATASET_DESIGN.md           # Phase 1 schema, ER, sample queries
 │   ├── FORK_ORIGIN.md              # fork-point SHA + rationale

@@ -43,12 +43,13 @@ Build an agentic RAG system where:
       why the fork was made
 - [ ] Update root `README.md` to reflect new scope (draft — will be revised
       as phases complete)
-- [ ] Commit `CLAUDE.md` and this document
+- [ ] Commit `docs/ARCHITECTURE.md` (durable principles + conventions) and
+      this document
 - [ ] Create long-lived branch `agentic-pivot` for phase work; merge to `main`
       at phase completions
 
-**Definition of done:** Clean clone, existing Sentinel tests pass, CLAUDE.md
-and AGENTIC_PIVOT_PLAN.md merged to `main`.
+**Definition of done:** Clean clone, existing Sentinel tests pass,
+`docs/ARCHITECTURE.md` and this document merged to `main`.
 
 ---
 

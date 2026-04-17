@@ -80,3 +80,12 @@ dmypy.json
 
 # Project-specific
 chroma_db/
+
+# AI tooling — local-only, never tracked
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.claude/
+.cursor/
+.aider*
+.copilot/
