@@ -4,6 +4,28 @@ Durable architectural principles and codebase conventions for
 SecureRAG-Agent. These rules constrain every design and code decision in
 the repo. Read this before contributing.
 
+## Independence from Sentinel
+
+SecureRAG-Agent is self-contained. There is no runtime dependency on
+SecureRAG-Sentinel — the upstream repo is kept as the `sentinel` git
+remote purely for historical reference and diffing.
+
+Security primitives that originated in Sentinel (the input/output
+scanners, rate limiter, audit logger, model-integrity check, PII and
+credential detectors) have been copied into this repo and evolve
+independently going forward. Upstream fixes in Sentinel are NOT
+automatically pulled; if a bug is discovered in a copied primitive
+and also needs fixing upstream, it is fixed in both places
+deliberately.
+
+Sentinel's classical-RAG orchestration (`SecureRAGChain`, the
+single-shot `/query` endpoint, `AccessControlledRetriever` against the
+12-employee `hr_records.json` fixture, the `data/raw/` corpus) was
+removed from this repo in Phase 2. The agentic threat model is
+different enough that carrying forward the classical orchestration
+created two parallel data models that would drift. Anyone needing the
+classical-RAG reference runs Sentinel directly from its own repo.
+
 ## Architectural principles
 
 ### 1. Access control lives in tool implementations, never in LLM instructions
