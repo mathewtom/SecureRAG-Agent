@@ -6,12 +6,23 @@ rather than a single retrieve-then-generate call.
 
 from __future__ import annotations
 
+import datetime as _dt
+import hashlib as _hashlib
 import inspect
 import unicodedata
 from typing import Any, Callable
 
 from src.agent.state import SecurityDecision, SecurityVerdict, initial_state
 from src.exceptions import BudgetExhausted, OutputFlagged, QueryBlocked
+from src.rate_limiter import RateLimitExceeded
+
+
+def _now_iso() -> str:
+    return _dt.datetime.now(_dt.timezone.utc).isoformat()
+
+
+def _query_hash(q: str) -> str:
+    return _hashlib.sha256(q.encode("utf-8")).hexdigest()[:16]
 
 
 def _call_scanner(scanner: Any, primary: str, **context: Any) -> Any:
@@ -63,6 +74,7 @@ class AgenticChain:
         audit: Any,
         extract_answer: Callable[[dict[str, Any]], str],
         max_steps: int = 20,
+        audit_sink: Any | None = None,
     ) -> None:
         self._graph = graph
         self._rate = rate_limiter
@@ -71,60 +83,118 @@ class AgenticChain:
         self._audit = audit
         self._extract = extract_answer
         self._max_steps = max_steps
+        self._audit_sink = audit_sink
+
+    def _emit_start(
+        self, request_id: str, user_id: str, normalized: str
+    ) -> None:
+        if self._audit_sink is None:
+            return
+        self._audit_sink.emit({
+            "ts": _now_iso(),
+            "event": "request_start",
+            "request_id": request_id,
+            "user_id": user_id,
+            "query_sha256": _query_hash(normalized),
+        })
+
+    def _emit_end(
+        self, request_id: str, outcome: str, step_count: int
+    ) -> None:
+        if self._audit_sink is None:
+            return
+        self._audit_sink.emit({
+            "ts": _now_iso(),
+            "event": "request_end",
+            "request_id": request_id,
+            "outcome": outcome,
+            "step_count": step_count,
+        })
 
     def invoke(self, *, query: str, user_id: str) -> dict[str, Any]:
         request_id = self._audit.new_request_id()
         normalized = unicodedata.normalize("NFKC", query)
 
-        self._rate.check(user_id)
+        # Emit request_start before any checks so that every outcome —
+        # including rate-limit denial — produces a matched start/end pair.
+        self._emit_start(request_id, user_id, normalized)
 
-        entry_verdicts: list[SecurityVerdict] = []
-        for scanner in self._in:
-            result = _call_scanner(scanner, normalized)
-            verdict = _to_verdict(scanner.name, "entry", result)
-            entry_verdicts.append(verdict)
-            self._audit.log_verdict(request_id, user_id,
-                                    scanner.name, "entry", result)
-            if getattr(result, "blocked", False):
-                raise QueryBlocked(result.reason, {"layer": scanner.name})
+        # `final` may not be assigned if an early exception fires; declare
+        # it here so the OutputFlagged handler can reference it safely.
+        final: dict[str, Any] = {}
 
-        state = initial_state(
-            request_id=request_id,
-            user_id=user_id,
-            query=normalized,
-            max_steps=self._max_steps,
-            seed_verdicts=entry_verdicts,
-        )
+        try:
+            self._rate.check(user_id)
 
-        # LangGraph counts each node execution as one super-step. The worst
-        # case is `agent_llm` -> `tools` alternation up to `max_steps` tool
-        # hops, which is ~2*max_steps node executions. Add a small safety
-        # margin so LangGraph's internal cap never fires before our explicit
-        # max_steps check does.
-        recursion_limit = self._max_steps * 2 + 10
-        final = self._graph.invoke(state, config={"recursion_limit": recursion_limit})
+            entry_verdicts: list[SecurityVerdict] = []
+            for scanner in self._in:
+                result = _call_scanner(scanner, normalized)
+                verdict = _to_verdict(scanner.name, "entry", result)
+                entry_verdicts.append(verdict)
+                self._audit.log_verdict(request_id, user_id,
+                                        scanner.name, "entry", result)
+                if getattr(result, "blocked", False):
+                    raise QueryBlocked(result.reason, {"layer": scanner.name})
 
-        if final.get("termination_reason") == "budget_exhausted":
-            self._audit.log_budget_exhausted(
-                request_id, user_id, final["step_count"],
+            state = initial_state(
+                request_id=request_id,
+                user_id=user_id,
+                query=normalized,
+                max_steps=self._max_steps,
+                seed_verdicts=entry_verdicts,
             )
-            raise BudgetExhausted(max_steps=final["max_steps"])
 
-        answer = self._extract(final)
-        final["final_answer"] = answer
-
-        for scanner in self._out:
-            result = _call_scanner(scanner, answer,
-                                   question=normalized,
-                                   user_id=user_id)
-            final["security_verdicts"].append(
-                _to_verdict(scanner.name, "exit", result),
+            # LangGraph counts each node execution as one super-step. The
+            # worst case is `agent_llm` -> `tools` alternation up to
+            # `max_steps` tool hops, which is ~2*max_steps node executions.
+            # Add a small safety margin so LangGraph's internal cap never
+            # fires before our explicit max_steps check does.
+            recursion_limit = self._max_steps * 2 + 10
+            final = self._graph.invoke(
+                state, config={"recursion_limit": recursion_limit}
             )
-            self._audit.log_verdict(request_id, user_id,
-                                    scanner.name, "exit", result)
-            if getattr(result, "flagged", False):
-                raise OutputFlagged([result.reason])
 
+            if final.get("termination_reason") == "budget_exhausted":
+                self._audit.log_budget_exhausted(
+                    request_id, user_id, final["step_count"],
+                )
+                raise BudgetExhausted(max_steps=final["max_steps"])
+
+            answer = self._extract(final)
+            final["final_answer"] = answer
+
+            for scanner in self._out:
+                result = _call_scanner(scanner, answer,
+                                       question=normalized,
+                                       user_id=user_id)
+                final["security_verdicts"].append(
+                    _to_verdict(scanner.name, "exit", result),
+                )
+                self._audit.log_verdict(request_id, user_id,
+                                        scanner.name, "exit", result)
+                if getattr(result, "flagged", False):
+                    raise OutputFlagged([result.reason])
+
+        except RateLimitExceeded:
+            self._emit_end(request_id, "rate_limited", step_count=0)
+            raise
+        except QueryBlocked:
+            self._emit_end(request_id, "blocked", step_count=0)
+            raise
+        except BudgetExhausted as exc:
+            self._emit_end(request_id, "budget_exhausted",
+                           step_count=exc.max_steps)
+            raise
+        except OutputFlagged:
+            self._emit_end(request_id, "flagged",
+                           step_count=final.get("step_count", 0))
+            raise
+        except Exception:
+            self._emit_end(request_id, "error", step_count=0)
+            raise
+
+        self._emit_end(request_id, "answered",
+                       step_count=final["step_count"])
         return {
             "request_id": request_id,
             "answer": answer,

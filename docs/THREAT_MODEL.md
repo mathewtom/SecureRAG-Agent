@@ -5,6 +5,14 @@
 > **Authoritative source:** the code; this document explains *why*
 > the code looks the way it does.
 
+> **Phase 4 note:** as of Phase 4, all audit events — including
+> `request_start`, `tool_call`, and `request_end` — are persisted to
+> `logs/audit-YYYY-MM-DD.jsonl`. The `denied` vs. `error` distinction
+> is now visible in the trail via the `status` field on `tool_call`
+> events and the `outcome` field on `request_end` events, making
+> forensic reconstruction of any session tractable without relying on
+> in-process log streams.
+
 ## Threat-model scope
 
 This document covers attacks that exploit the **agentic** surface
@@ -204,7 +212,12 @@ test that proves the defense holds.
 - **Status.** Partially mitigated. Bulk escalation as a DoS on
   human reviewers (rather than on compute) is residual risk when
   `max_steps` is set high. Reviewer-side rate limiting is a Phase 4
-  candidate.
+  candidate. As of Phase 4, bulk escalation attempts are distinguishable
+  in the audit trail: requests that hit the step budget produce
+  `outcome="budget_exhausted"` on their `request_end` event, while
+  requests that complete normally carry `outcome="answered"` with an
+  elevated `step_count`, making both attack patterns tractable in
+  post-hoc analysis.
 
 ### T-012 — Phantom-user attribution
 
@@ -226,7 +239,12 @@ test that proves the defense holds.
   test files (`test_lookup_employee.py`, `test_get_approval_chain.py`,
   `test_list_my_tickets.py`, `test_get_ticket_detail.py`,
   `test_list_calendar_events.py`, `test_escalate_to_human.py`).
-- **Status.** Mitigated.
+- **Status.** Mitigated. The Phase 4 audit sink additionally bounds
+  attribution at the request level: `request_start` carries the
+  `user_id` drawn from the authenticated session context injected by
+  `AgenticChain`, never from LLM-supplied arguments. Attribution gaps
+  — where one set of tool-call audit entries belongs to an ambiguous or
+  phantom identity — are therefore impossible within a single request.
 
 ## Out of scope
 

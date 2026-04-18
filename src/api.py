@@ -197,6 +197,7 @@ def _build_chain() -> Any:
         output_scanners=output_scanners,
         audit=audit,
         extract_answer=_extract_answer,
+        audit_sink=audit_sink,
     )
 
 

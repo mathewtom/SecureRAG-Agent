@@ -194,13 +194,13 @@ exists to reconstruct any agent session for post-hoc analysis.
 
 #### Deliverables
 
-- [ ] `src/agent/audit.py` — structured audit logger
-- [ ] Schema: `(request_id, session_id, user_id, hop_index, tool_name,
-      args_hash, result_status, layer_verdicts, timestamp)`
-- [ ] Query content is SHA-256 hashed; raw content is NOT logged
-- [ ] `tests/agent/test_audit_trail.py` — verifies every tool call produces
-      an audit event, events are ordered, events are append-only
-- [ ] Log output to `logs/audit-YYYY-MM-DD.jsonl`
+- [x] `src/agent/audit_sink.py` — file-backed JSONL sink, day-rotated
+- [x] Schema: `(ts, event, request_id, user_id, hop_index, tool_name,
+      args_sha256, status, duration_ms, reason)` — see PHASE_4_PLAN.md
+- [x] Query content is SHA-256 hashed; raw content is NOT logged
+- [x] `tests/agent/test_audit_trail.py` — end-to-end integrity
+- [x] Log output to `logs/audit-YYYY-MM-DD.jsonl`
+- [x] `AccessDenied` distinguished from operator errors as `status=denied`
 
 ---
 
