@@ -89,3 +89,6 @@ GEMINI.md
 .cursor/
 .aider*
 .copilot/
+
+# Audit logs — local ephemeral, never tracked
+logs/
