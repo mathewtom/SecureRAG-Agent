@@ -30,8 +30,9 @@ class AuthenticatedToolNode:
     `"llm_supplied_user_id_rejected"`.
     """
 
-    def __init__(self, *, retriever: Any) -> None:
+    def __init__(self, *, retriever: Any, audit: Any | None = None) -> None:
         self._retriever = retriever
+        self._audit = audit
 
     def __call__(self, state: AgentState) -> dict[str, Any]:
         if not state["messages"]:
@@ -60,6 +61,13 @@ class AuthenticatedToolNode:
                     args=raw_args,
                     reason="llm_supplied_user_id_rejected",
                 ))
+                if self._audit is not None:
+                    self._audit.log_denial(
+                        request_id=state["request_id"],
+                        user_id=state["user_id"],
+                        layer="authenticated_tool_node",
+                        reason="llm_supplied_user_id_rejected",
+                    )
                 raw_args.pop("user_id")
 
             start = time.perf_counter()
@@ -76,6 +84,13 @@ class AuthenticatedToolNode:
                 status = ToolStatus.ERROR
                 content = f"tool error [{type(e).__name__}]: {e}"
                 error_reason = f"{type(e).__name__}: {e}"
+                if self._audit is not None:
+                    self._audit.log_denial(
+                        request_id=state["request_id"],
+                        user_id=state["user_id"],
+                        layer="authenticated_tool_node",
+                        reason=f"tool_invocation_failed: {type(e).__name__}",
+                    )
             duration_ms = int((time.perf_counter() - start) * 1000)
 
             new_messages.append(ToolMessage(
@@ -137,7 +152,7 @@ def _serialize_result(result: Any) -> str:
 
 # ---------- ReAct graph wiring (Task 8) -----------------------------
 
-def build_graph(*, llm: Any, retriever: Any) -> Any:
+def build_graph(*, llm: Any, retriever: Any, audit: Any | None = None) -> Any:
     """Build the LangGraph ReAct state machine.
 
     Parameters
@@ -148,6 +163,10 @@ def build_graph(*, llm: Any, retriever: Any) -> Any:
         Ollama-backed LangChain chat model; tests pass a stub.
     retriever
         Object with `search(query, user_id) -> list[dict]`.
+    audit
+        Optional audit module. When provided, denial and error events
+        inside the tool node emit structured log entries via
+        ``audit.log_denial``.
 
     The budget cap is not a graph parameter - the wrapper seeds
     `state["max_steps"]` and `AuthenticatedToolNode` enforces it by
@@ -161,7 +180,7 @@ def build_graph(*, llm: Any, retriever: Any) -> Any:
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
 
-    tools_node = AuthenticatedToolNode(retriever=retriever)
+    tools_node = AuthenticatedToolNode(retriever=retriever, audit=audit)
 
     graph: StateGraph[AgentState] = StateGraph(AgentState)
     graph.add_node("agent_llm", agent_llm_node)

@@ -125,7 +125,7 @@ def _build_chain() -> Any:
     )
 
     llm = ChatOllama(model=model, base_url=ollama_host, temperature=0)
-    graph = build_graph(llm=llm, retriever=retriever)
+    graph = build_graph(llm=llm, retriever=retriever, audit=audit)
 
     rate = RateLimiter()
 

@@ -201,3 +201,66 @@ def test_multiple_tool_calls_in_one_step():
     # step_count increments by 1 per node call, regardless of how many
     # tool calls were inside it
     assert out["step_count"] == 1
+
+
+def test_in_graph_denial_calls_audit_log_denial() -> None:
+    """User_id override attempts must emit a log_denial entry, not just a state record."""
+    retriever = Mock()
+    retriever.search.return_value = []
+    audit_mock = Mock()
+
+    node = AuthenticatedToolNode(retriever=retriever, audit=audit_mock)
+    state = _state_with_tool_call(
+        user_id="E003",
+        tool_args={"query": "salaries", "user_id": "E012"},
+    )
+
+    node(state)
+
+    # log_denial was called with the override reason
+    assert audit_mock.log_denial.called
+    call = audit_mock.log_denial.call_args
+    # Either kwargs or positional - check both shapes
+    all_args = list(call.args) + list(call.kwargs.values())
+    assert any("llm_supplied_user_id_rejected" in str(a) for a in all_args)
+
+
+def test_unknown_tool_error_calls_audit_log_denial() -> None:
+    """Tool invocation errors must also emit log_denial."""
+    retriever = Mock()
+    audit_mock = Mock()
+
+    node = AuthenticatedToolNode(retriever=retriever, audit=audit_mock)
+    state = initial_state(
+        request_id="r", user_id="E003", query="q", max_steps=20,
+    )
+    state["messages"].append(
+        AIMessage(content="", tool_calls=[{
+            "id": "call_x",
+            "name": "delete_all_data",
+            "args": {},
+        }])
+    )
+
+    node(state)
+
+    assert audit_mock.log_denial.called
+    call = audit_mock.log_denial.call_args
+    all_args = list(call.args) + list(call.kwargs.values())
+    assert any("tool_invocation_failed" in str(a) for a in all_args)
+
+
+def test_audit_optional_no_crash_when_omitted() -> None:
+    """The audit kwarg must remain optional so existing tests don't break."""
+    retriever = Mock()
+    retriever.search.return_value = []
+
+    # No audit passed
+    node = AuthenticatedToolNode(retriever=retriever)
+    state = _state_with_tool_call(
+        user_id="E003",
+        tool_args={"query": "q", "user_id": "E012"},
+    )
+
+    out = node(state)  # Must not raise
+    assert any(r["status"] == "denied" for r in out["tool_call_log"])
