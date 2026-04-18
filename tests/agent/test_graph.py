@@ -108,7 +108,13 @@ def test_bind_tools_called_with_all_tools():
     build_graph(llm=llm, handlers=_handlers_for(retriever))
 
     names = {t.name for t in llm.bind_tools_called_with}
-    assert names == {"search_documents", "lookup_employee", "get_approval_chain"}
+    assert names == {
+        "search_documents",
+        "lookup_employee",
+        "get_approval_chain",
+        "list_my_tickets",
+        "get_ticket_detail",
+    }
 
 
 def test_system_prompt_prepended_to_messages_for_llm():

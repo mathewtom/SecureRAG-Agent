@@ -98,10 +98,12 @@ def _build_chain() -> Any:
     from src.agent.graph import build_graph
     from src.agent.retriever import MeridianRetriever
     from src.agent.tools.get_approval_chain import make_get_approval_chain_handler
+    from src.agent.tools.get_ticket_detail import make_get_ticket_detail_handler
+    from src.agent.tools.list_my_tickets import make_list_my_tickets_handler
     from src.agent.tools.lookup_employee import make_lookup_employee_handler
     from src.agent.tools.registry import ToolRegistry, make_search_documents_handler
     from src.agent.wrapper import AgenticChain
-    from src.data.loaders import load_employees
+    from src.data.loaders import load_employees, load_projects, load_tickets
     from src.model_integrity import verify_model_digest
     from src.rate_limiter import RateLimiter
     from src.sanitizers.classification_guard import ClassificationGuard
@@ -122,6 +124,10 @@ def _build_chain() -> Any:
     chroma_dir = Path("data/chroma")
     chroma_client = chromadb.PersistentClient(path=str(chroma_dir))
     employees = {e.employee_id: e for e in load_employees()}
+    tickets_list = load_tickets()
+    tickets_by_id = {t.ticket_id: t for t in tickets_list}
+    projects_list = load_projects()
+    projects_by_id = {p.project_id: p for p in projects_list}
     retriever = MeridianRetriever(
         collection=chroma_client.get_collection("meridian_documents"),
         employees_by_id=employees,
@@ -131,6 +137,12 @@ def _build_chain() -> Any:
         "search_documents": make_search_documents_handler(retriever),
         "lookup_employee": make_lookup_employee_handler(employees=employees),
         "get_approval_chain": make_get_approval_chain_handler(employees=employees),
+        "list_my_tickets": make_list_my_tickets_handler(
+            employees=employees, tickets=tickets_list,
+        ),
+        "get_ticket_detail": make_get_ticket_detail_handler(
+            employees=employees, tickets=tickets_by_id, projects=projects_by_id,
+        ),
     }
 
     llm = ChatOllama(model=model, base_url=ollama_host, temperature=0)
