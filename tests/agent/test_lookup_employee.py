@@ -115,14 +115,6 @@ def test_cross_department_lookup_denied(handler):
         handler({"employee_id": "E005"}, user_id="E003")
 
 
-def test_subordinate_cannot_view_manager_record_via_lookup(handler):
-    """E003 cannot lookup E002 via this tool - same dept handles that path.
-    Test for a different-department case to isolate the rule."""
-    # E003 (Engineering) tries to look up E005 (Sales): same-dept fails
-    with pytest.raises(AccessDenied):
-        handler({"employee_id": "E005"}, user_id="E003")
-
-
 def test_unknown_user_id_denied(handler):
     """Per Task A's design note, handler must raise AccessDenied (not
     KeyError) when caller user_id is unknown."""

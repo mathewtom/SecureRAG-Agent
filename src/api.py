@@ -97,6 +97,7 @@ def _build_chain() -> Any:
     from src import audit
     from src.agent.graph import build_graph
     from src.agent.retriever import MeridianRetriever
+    from src.agent.tools.get_approval_chain import make_get_approval_chain_handler
     from src.agent.tools.lookup_employee import make_lookup_employee_handler
     from src.agent.tools.registry import ToolRegistry, make_search_documents_handler
     from src.agent.wrapper import AgenticChain
@@ -129,6 +130,7 @@ def _build_chain() -> Any:
     handlers: ToolRegistry = {
         "search_documents": make_search_documents_handler(retriever),
         "lookup_employee": make_lookup_employee_handler(employees=employees),
+        "get_approval_chain": make_get_approval_chain_handler(employees=employees),
     }
 
     llm = ChatOllama(model=model, base_url=ollama_host, temperature=0)
