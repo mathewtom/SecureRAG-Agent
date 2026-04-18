@@ -10,18 +10,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.agent.tools.auth import classifications_up_to  # re-export
 from src.data.loaders import Employee
 from src.exceptions import AccessDenied
 
-_CLASSIFICATION_ORDER = ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"]
-
-
-def classifications_up_to(clearance_level: int) -> list[str]:
-    """Return the classification tiers a caller at `clearance_level`
-    is permitted to see. Inclusive: level 2 sees PUBLIC + INTERNAL."""
-    if not 1 <= clearance_level <= 4:
-        raise ValueError(f"clearance_level must be 1-4, got {clearance_level}")
-    return _CLASSIFICATION_ORDER[:clearance_level]
+__all__ = ["MeridianRetriever", "classifications_up_to"]
 
 
 class MeridianRetriever:
