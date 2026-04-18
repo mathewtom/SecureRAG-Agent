@@ -270,3 +270,121 @@ def test_audit_optional_no_crash_when_omitted() -> None:
 
     out = node(state)  # Must not raise
     assert any(r["status"] == "denied" for r in out["tool_call_log"])
+
+
+# ---------- Phase 4: AuditSink integration --------------------------------
+
+def test_audit_sink_receives_event_per_tool_call(tmp_path):
+    """Every successful tool call emits one sink event."""
+    import json
+
+    from src.agent.audit_sink import AuditSink
+
+    retriever = Mock()
+    retriever.search.return_value = [
+        {"doc_id": "d1", "content": "hi", "metadata": {}},
+    ]
+    sink = AuditSink(logs_dir=tmp_path)
+    handlers = {"search_documents": (
+        lambda args, *, user_id: retriever.search(
+            query=args["query"], user_id=user_id,
+        )
+    )}
+
+    node = AuthenticatedToolNode(handlers=handlers, audit_sink=sink)
+    state = _state_with_tool_call("E003", {"query": "q"})
+
+    node(state)
+
+    lines = sink.log_path().read_text().splitlines()
+    assert len(lines) == 1
+    event = json.loads(lines[0])
+    assert event["event"] == "tool_call"
+    assert event["status"] == "success"
+    assert event["tool_name"] == "search_documents"
+    assert event["request_id"] == "r1"
+    assert event["user_id"] == "E003"
+
+
+def test_access_denied_recorded_as_denied_not_error(tmp_path):
+    """A handler raising AccessDenied is recorded with status=denied,
+    not status=error. This separates security events from operator errors."""
+    import json
+
+    from src.agent.audit_sink import AuditSink
+    from src.exceptions import AccessDenied
+
+    sink = AuditSink(logs_dir=tmp_path)
+    handlers = {"search_documents": (
+        lambda args, *, user_id: (_ for _ in ()).throw(
+            AccessDenied(f"unauthorized: {user_id}"),
+        )
+    )}
+
+    node = AuthenticatedToolNode(handlers=handlers, audit_sink=sink)
+    state = _state_with_tool_call("E003", {"query": "q"})
+
+    out = node(state)
+
+    assert out["tool_call_log"][0]["status"] == "denied"
+    assert "access_denied" in out["tool_call_log"][0]["reason"].lower()
+
+    event = json.loads(sink.log_path().read_text().strip())
+    assert event["status"] == "denied"
+
+
+def test_other_exceptions_still_recorded_as_error(tmp_path):
+    """A handler raising ValueError (or any non-AccessDenied) keeps
+    status=error so operator errors are still distinguishable."""
+    from src.agent.audit_sink import AuditSink
+
+    sink = AuditSink(logs_dir=tmp_path)
+    handlers = {"search_documents": (
+        lambda args, *, user_id: (_ for _ in ()).throw(
+            ValueError("bad input"),
+        )
+    )}
+
+    node = AuthenticatedToolNode(handlers=handlers, audit_sink=sink)
+    state = _state_with_tool_call("E003", {"query": "q"})
+
+    out = node(state)
+
+    assert out["tool_call_log"][0]["status"] == "error"
+    assert "ValueError" in out["tool_call_log"][0]["reason"]
+
+
+def test_llm_user_id_injection_emits_separate_denial_event(tmp_path):
+    """LLM-supplied user_id rejection emits its own sink event with
+    status=denied AND the subsequent (cleansed) tool call also emits
+    its own event."""
+    import json
+
+    from src.agent.audit_sink import AuditSink
+
+    sink = AuditSink(logs_dir=tmp_path)
+    retriever_mock = Mock()
+    retriever_mock.search.return_value = []
+    handlers = {"search_documents": (
+        lambda args, *, user_id: retriever_mock.search(
+            query=args["query"], user_id=user_id,
+        )
+    )}
+
+    node = AuthenticatedToolNode(handlers=handlers, audit_sink=sink)
+    state = _state_with_tool_call(
+        "E003", {"query": "q", "user_id": "E007"},
+    )
+
+    node(state)
+
+    events = [json.loads(line)
+              for line in sink.log_path().read_text().splitlines()]
+    # Two events: the denial of the user_id smuggling, plus the
+    # actual tool call (which proceeded with the trusted user_id)
+    assert len(events) == 2
+    statuses = [e["status"] for e in events]
+    assert "denied" in statuses
+    assert "success" in statuses
+    denial_event = next(e for e in events if e["status"] == "denied")
+    assert denial_event["reason"] == "llm_supplied_user_id_rejected"

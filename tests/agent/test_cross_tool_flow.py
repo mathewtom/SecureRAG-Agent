@@ -209,15 +209,15 @@ def test_cross_tool_denial_does_not_break_the_loop() -> None:
 
     final = graph.invoke(state)
 
-    # The denied tool call IS in the log, with status=ERROR
+    # The denied tool call IS in the log, with status=DENIED
     # (AccessDenied is caught by AuthenticatedToolNode and recorded
-    # as a tool error, not propagated to crash the graph)
+    # as a security denial, distinct from operator errors)
     records = final["tool_call_log"]
     assert len(records) == 1
     assert records[0]["tool_name"] == "lookup_employee"
-    assert records[0]["status"] == "error"
-    # The reason field carries the exception type
-    assert "AccessDenied" in records[0]["reason"]
+    assert records[0]["status"] == "denied"
+    # The reason field carries the access_denied prefix
+    assert "access_denied" in records[0]["reason"].lower()
 
     # The LLM was able to produce a final answer despite the denial
     assert final["messages"][-1].content == (
@@ -267,14 +267,19 @@ def test_llm_supplied_user_id_blocked_across_multiple_hops() -> None:
 
     final = graph.invoke(state)
 
-    # Both hops have a denial record alongside the actual call record
-    denial_records = [
-        r for r in final["tool_call_log"] if r["status"] == "denied"
+    # Both hops have a denial record for the injection attempt.
+    # The lookup_employee call also raises AccessDenied (E004 cannot view
+    # E001) which is now recorded as a third denied record — correct behavior
+    # after the AccessDenied → status=denied distinction landed.
+    injection_denial_records = [
+        r for r in final["tool_call_log"]
+        if r["status"] == "denied"
+        and r["reason"] == "llm_supplied_user_id_rejected"
     ]
-    assert len(denial_records) == 2
+    assert len(injection_denial_records) == 2
     assert all(
         r["reason"] == "llm_supplied_user_id_rejected"
-        for r in denial_records
+        for r in injection_denial_records
     )
 
     # The state user_id is still E004 throughout

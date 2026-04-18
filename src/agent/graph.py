@@ -6,6 +6,7 @@ state-graph wiring (added in Task 8).
 
 from __future__ import annotations
 
+import datetime as _dt
 import hashlib
 import json
 import time
@@ -16,6 +17,7 @@ from langgraph.graph import END, StateGraph
 
 from src.agent.prompts import SYSTEM_PROMPT
 from src.agent.state import AgentState, ToolCallRecord, ToolStatus
+from src.exceptions import AccessDenied
 from src.agent.tools import (
     escalate_to_human,
     get_approval_chain,
@@ -44,9 +46,11 @@ class AuthenticatedToolNode:
         *,
         handlers: ToolRegistry,
         audit: Any | None = None,
+        audit_sink: Any | None = None,
     ) -> None:
         self._handlers = handlers
         self._audit = audit
+        self._audit_sink = audit_sink
 
     def __call__(self, state: AgentState) -> dict[str, Any]:
         if not state["messages"]:
@@ -82,6 +86,19 @@ class AuthenticatedToolNode:
                         layer="authenticated_tool_node",
                         reason="llm_supplied_user_id_rejected",
                     )
+                if self._audit_sink is not None:
+                    self._audit_sink.emit({
+                        "ts": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                        "event": "tool_call",
+                        "request_id": state["request_id"],
+                        "user_id": state["user_id"],
+                        "tool_name": name,
+                        "hop_index": next_step - 1,
+                        "args_sha256": _args_hash(raw_args),
+                        "status": ToolStatus.DENIED.value,
+                        "duration_ms": 0,
+                        "reason": "llm_supplied_user_id_rejected",
+                    })
                 raw_args.pop("user_id")
 
             start = time.perf_counter()
@@ -94,6 +111,10 @@ class AuthenticatedToolNode:
                     if isinstance(result, list) else []
                 new_doc_ids.extend(doc_ids)
                 content = _serialize_result(result)
+            except AccessDenied as e:
+                status = ToolStatus.DENIED
+                error_reason = f"access_denied: {e}"
+                content = f"tool denied [AccessDenied]: {e}"
             except Exception as e:
                 status = ToolStatus.ERROR
                 content = f"tool error [{type(e).__name__}]: {e}"
@@ -119,6 +140,19 @@ class AuthenticatedToolNode:
                 duration_ms=duration_ms,
                 reason=None if status == ToolStatus.SUCCESS else error_reason,
             ))
+            if self._audit_sink is not None:
+                self._audit_sink.emit({
+                    "ts": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                    "event": "tool_call",
+                    "request_id": state["request_id"],
+                    "user_id": state["user_id"],
+                    "tool_name": name,
+                    "hop_index": next_step - 1,
+                    "args_sha256": _args_hash(raw_args),
+                    "status": status.value,
+                    "duration_ms": duration_ms,
+                    "reason": error_reason,
+                })
 
         budget_exhausted = next_step >= state["max_steps"]
         update: dict[str, Any] = {
@@ -164,7 +198,13 @@ def _serialize_result(result: Any) -> str:
 
 # ---------- ReAct graph wiring (Task 8) -----------------------------
 
-def build_graph(*, llm: Any, handlers: ToolRegistry, audit: Any | None = None) -> Any:
+def build_graph(
+    *,
+    llm: Any,
+    handlers: ToolRegistry,
+    audit: Any | None = None,
+    audit_sink: Any | None = None,
+) -> Any:
     """Build the LangGraph ReAct state machine.
 
     Parameters
@@ -181,6 +221,10 @@ def build_graph(*, llm: Any, handlers: ToolRegistry, audit: Any | None = None) -
         Optional audit module. When provided, denial and error events
         inside the tool node emit structured log entries via
         ``audit.log_denial``.
+    audit_sink
+        Optional ``AuditSink`` instance. When provided, every tool call
+        emits one structured JSONL event with status, duration, and a
+        SHA-256 hash of the arguments.
 
     The budget cap is not a graph parameter - the wrapper seeds
     `state["max_steps"]` and `AuthenticatedToolNode` enforces it by
@@ -202,7 +246,9 @@ def build_graph(*, llm: Any, handlers: ToolRegistry, audit: Any | None = None) -
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
 
-    tools_node = AuthenticatedToolNode(handlers=handlers, audit=audit)
+    tools_node = AuthenticatedToolNode(
+        handlers=handlers, audit=audit, audit_sink=audit_sink,
+    )
 
     graph: StateGraph[AgentState] = StateGraph(AgentState)
     graph.add_node("agent_llm", agent_llm_node)

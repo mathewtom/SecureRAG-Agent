@@ -95,6 +95,7 @@ def _build_chain() -> Any:
     from langchain_ollama import ChatOllama
 
     from src import audit
+    from src.agent.audit_sink import AuditSink
     from src.agent.graph import build_graph
     from src.agent.retriever import MeridianRetriever
     from src.agent.tools.escalate_to_human import make_escalate_to_human_handler
@@ -155,7 +156,8 @@ def _build_chain() -> Any:
     }
 
     llm = ChatOllama(model=model, base_url=ollama_host, temperature=0)
-    graph = build_graph(llm=llm, handlers=handlers, audit=audit)
+    audit_sink = AuditSink(logs_dir=Path("logs"))
+    graph = build_graph(llm=llm, handlers=handlers, audit=audit, audit_sink=audit_sink)
 
     rate = RateLimiter()
 
