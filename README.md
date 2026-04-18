@@ -1,5 +1,7 @@
 # SecureRAG-Agent
 
+**Status:** complete (Phases 0–6); see [`docs/PROJECT_COMPLETE.md`](docs/PROJECT_COMPLETE.md).
+
 A security-hardened **agentic** RAG pipeline. Forked from
 [SecureRAG-Sentinel](https://github.com/mathewtom/SecureRAG-Sentinel) at
 commit [`6159f4a`](docs/FORK_ORIGIN.md) because agentic RAG has a different
@@ -156,6 +158,29 @@ conventions).
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint. |
 | `SECURERAG_DEMO_USER` | `E003` | The `user_id` injected for the placeholder `/agent/query` endpoint until real auth is wired. |
 | `SECURERAG_MODEL_DIGEST` | (unset) | If set, agent verifies the loaded model's digest matches at startup. Supply-chain defense. |
+
+### Running the eval harness
+
+The eval harness ([`eval/`](eval/)) drives the agent through 52
+canned queries spanning 11 categories (single/multi-hop, authz
+denials, identity smuggling, budget exhaustion, escalation,
+aggregation, etc.) and verifies behavior against expected outcomes.
+
+Stub mode (default) runs without Ollama in seconds; live mode
+(`--live`) requires the full stack.
+
+```bash
+# Stub baseline (CI-friendly)
+uv run python -m eval.run_eval
+
+# One category only
+uv run python -m eval.run_eval --category authz_denial_employee
+
+# Live mode (requires Ollama + populated ChromaDB)
+uv run python -m eval.run_eval --live --report eval/results/live_$(date +%Y-%m-%d).md
+```
+
+Latest baseline: [`eval/results/baseline_2026-04-17.md`](eval/results/baseline_2026-04-17.md).
 
 ## Repository layout (current)
 

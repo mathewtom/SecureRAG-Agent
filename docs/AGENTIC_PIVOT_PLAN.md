@@ -1,5 +1,13 @@
 # Agentic Pivot Plan — SecureRAG-Agent
 
+> **Status (2026-04-17):** All 6 phases complete + Phase 2.5 cleanup.
+> Agent stack with 7 tools, full audit trail, threat model
+> documented, eval harness with stub-mode baseline. Live-Ollama
+> integration testing requires `data/chroma/` populated and Ollama
+> running. Follow-on adaptive red-team work continues in
+> [`ai-redteam-lab`](https://github.com/mathewtom/ai-redteam-lab).
+> See [`docs/PROJECT_COMPLETE.md`](PROJECT_COMPLETE.md).
+
 > Phased migration from classical RAG (Sentinel) to agentic RAG (Agent).
 > This document is the authoritative source for "what are we building right
 > now." When a phase is complete, move it to the "Completed" section at the
@@ -234,11 +242,16 @@ numbers as defenses are added.
 
 #### Deliverables
 
-- [ ] `eval/agentic_queries.jsonl` — ~50 multi-hop queries with expected
-      behaviors (allowed answer / specific denial / escalation)
-- [ ] `eval/run_eval.py` — runs agent against query set, produces report
-- [ ] `eval/report_template.md` — structured output format
-- [ ] First baseline run recorded in `eval/results/baseline_YYYYMMDD.md`
+- [x] `eval/agentic_queries.jsonl` — 52 multi-hop queries across 11
+      categories with expected behaviors
+- [x] `eval/run_eval.py` — CLI runs agent against query set, produces
+      markdown report; supports `--live` for Ollama-backed runs
+- [x] `eval/reporter.py` — structured markdown report generator
+      (lives in code rather than as a static template)
+- [x] First baseline run recorded in
+      [`eval/results/baseline_2026-04-17.md`](../eval/results/baseline_2026-04-17.md)
+      (stub mode, 26 / 52 passing — meaningful baseline; iterative
+      query tuning is Phase 7+)
 
 ---
 
