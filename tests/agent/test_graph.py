@@ -114,6 +114,8 @@ def test_bind_tools_called_with_all_tools():
         "get_approval_chain",
         "list_my_tickets",
         "get_ticket_detail",
+        "list_calendar_events",
+        "escalate_to_human",
     }
 
 

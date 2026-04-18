@@ -17,8 +17,10 @@ from langgraph.graph import END, StateGraph
 from src.agent.prompts import SYSTEM_PROMPT
 from src.agent.state import AgentState, ToolCallRecord, ToolStatus
 from src.agent.tools import (
+    escalate_to_human,
     get_approval_chain,
     get_ticket_detail,
+    list_calendar_events,
     list_my_tickets,
     lookup_employee,
     search_documents,
@@ -191,6 +193,8 @@ def build_graph(*, llm: Any, handlers: ToolRegistry, audit: Any | None = None) -
         get_approval_chain,
         list_my_tickets,
         get_ticket_detail,
+        list_calendar_events,
+        escalate_to_human,
     ])
 
     def agent_llm_node(state: AgentState) -> dict[str, Any]:

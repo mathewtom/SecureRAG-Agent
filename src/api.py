@@ -97,13 +97,15 @@ def _build_chain() -> Any:
     from src import audit
     from src.agent.graph import build_graph
     from src.agent.retriever import MeridianRetriever
+    from src.agent.tools.escalate_to_human import make_escalate_to_human_handler
     from src.agent.tools.get_approval_chain import make_get_approval_chain_handler
     from src.agent.tools.get_ticket_detail import make_get_ticket_detail_handler
+    from src.agent.tools.list_calendar_events import make_list_calendar_events_handler
     from src.agent.tools.list_my_tickets import make_list_my_tickets_handler
     from src.agent.tools.lookup_employee import make_lookup_employee_handler
     from src.agent.tools.registry import ToolRegistry, make_search_documents_handler
     from src.agent.wrapper import AgenticChain
-    from src.data.loaders import load_employees, load_projects, load_tickets
+    from src.data.loaders import load_calendar, load_employees, load_projects, load_tickets
     from src.model_integrity import verify_model_digest
     from src.rate_limiter import RateLimiter
     from src.sanitizers.classification_guard import ClassificationGuard
@@ -128,6 +130,7 @@ def _build_chain() -> Any:
     tickets_by_id = {t.ticket_id: t for t in tickets_list}
     projects_list = load_projects()
     projects_by_id = {p.project_id: p for p in projects_list}
+    events_list = load_calendar()
     retriever = MeridianRetriever(
         collection=chroma_client.get_collection("meridian_documents"),
         employees_by_id=employees,
@@ -142,6 +145,12 @@ def _build_chain() -> Any:
         ),
         "get_ticket_detail": make_get_ticket_detail_handler(
             employees=employees, tickets=tickets_by_id, projects=projects_by_id,
+        ),
+        "list_calendar_events": make_list_calendar_events_handler(
+            employees=employees, events=events_list,
+        ),
+        "escalate_to_human": make_escalate_to_human_handler(
+            employees=employees, audit=audit,
         ),
     }
 
