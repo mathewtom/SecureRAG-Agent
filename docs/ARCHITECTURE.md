@@ -98,10 +98,10 @@ the Garak environment. Maintain the split.
 - **Agent framework.** LangGraph (not LangChain's deprecated
   AgentExecutor). This is a hard choice — do not suggest switching to
   CrewAI, AutoGen, or roll-your-own without raising it first.
-- **LLM runtime.** Ollama, native macOS (not Docker), Metal GPU. Model
-  is `llama3.1:8b` for development, `llama3.3:70b` for evaluation runs.
-  Both digests are pinned in `config/models.yaml` (supply-chain
-  defense).
+- **LLM runtime.** Ollama, native macOS (not Docker), Metal GPU. Default
+  model is `llama3.3:70b` (set via `SECURERAG_MODEL`); override to
+  `llama3.1:8b` for faster dev iteration. Llama Guard 3
+  (`llama-guard3:1b` by default) provides the semantic output-scan layer.
 - **Vector DB.** ChromaDB, local-only, persisted under `data/chroma/`.
 - **PII / sanitization.** Microsoft Presidio (inherited from Sentinel).
 - **Testing.** pytest; security-relevant tests live in `tests/security/`

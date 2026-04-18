@@ -143,9 +143,19 @@ uv sync                  # installs from uv.lock
 uv run pytest -q         # smoke
 ```
 
-Python 3.12+. Ollama running locally with `llama3.1:8b` for development,
-`llama3.3:70b` for evaluation runs (see
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full conventions).
+Python 3.12+. Ollama running locally with `llama3.3:70b` as the default
+model (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full
+conventions).
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SECURERAG_MODEL` | `llama3.3:70b` | Main agent LLM. Override to `llama3.1:8b` for faster dev iteration. |
+| `SECURERAG_GUARD_MODEL` | `llama-guard3:1b` | Semantic output scanner model (Llama Guard). |
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint. |
+| `SECURERAG_DEMO_USER` | `E003` | The `user_id` injected for the placeholder `/agent/query` endpoint until real auth is wired. |
+| `SECURERAG_MODEL_DIGEST` | (unset) | If set, agent verifies the loaded model's digest matches at startup. Supply-chain defense. |
 
 ## Repository layout (current)
 

@@ -107,7 +107,7 @@ def _build_chain() -> Any:
     from src.sanitizers.injection_scanner import InjectionScanner
     from src.sanitizers.output_scanner import OutputScanner
 
-    model = os.environ.get("SECURERAG_MODEL", "llama3.1:8b")
+    model = os.environ.get("SECURERAG_MODEL", "llama3.3:70b")
     ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
     expected_digest = os.environ.get("SECURERAG_MODEL_DIGEST")
     if expected_digest:
@@ -142,7 +142,12 @@ def _build_chain() -> Any:
     # For now the regex InjectionScanner provides the entry-layer coverage.
     input_scanners = [injection_scanner]
 
-    output_scanner_obj = OutputScanner(ollama_host=ollama_host)
+    guard_model = os.environ.get("SECURERAG_GUARD_MODEL", "llama-guard3:1b")
+    output_scanner_obj = OutputScanner(
+        enable_semantic=True,
+        ollama_host=ollama_host,
+        guard_model=guard_model,
+    )
 
     classification_guard_obj = ClassificationGuard(
         user_accessible_classifications={
