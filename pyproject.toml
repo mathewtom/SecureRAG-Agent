@@ -18,6 +18,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "langgraph>=1.1.8",
+    "langchain-ollama>=1.1.0",
 ]
 
 [dependency-groups]
@@ -32,3 +33,19 @@ dev = [
 markers = [
     "integration: requires Ollama with llama-guard3:1b",
 ]
+
+[tool.mypy]
+strict = true
+
+# Sentinel-inherited sanitizer modules have not been upgraded to strict
+# typing yet. Suppress their errors so `mypy --strict src/api.py` stays
+# clean on files we own; these modules are tracked separately.
+[[tool.mypy.overrides]]
+module = [
+    "src.sanitizers.injection_scanner",
+    "src.sanitizers.credential_detector",
+    "src.sanitizers.classification_guard",
+    "src.sanitizers.output_scanner",
+    "src.audit",
+]
+ignore_errors = true
