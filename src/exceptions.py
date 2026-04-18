@@ -11,7 +11,7 @@ class QueryBlocked(Exception):
     """Raised by an input-stage scanner that refuses to forward the
     query into the agent loop. Maps to HTTP 400."""
 
-    def __init__(self, reason: str, details: dict) -> None:
+    def __init__(self, reason: str, details: dict[str, object]) -> None:
         self.reason = reason
         self.details = details
         super().__init__(reason)
