@@ -28,6 +28,7 @@ class ToolCallRecord(TypedDict):
     args_sha256: str  # SHA-256 hex prefix of JSON-serialized args (set by AuthenticatedToolNode)
     status: ToolStatus
     duration_ms: int
+    reason: str | None  # populated for status=DENIED or status=ERROR
 
 
 class SecurityVerdict(TypedDict):

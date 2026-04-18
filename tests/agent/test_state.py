@@ -64,6 +64,7 @@ def test_tool_call_record_shape():
         "args_sha256": "abc123",
         "status": "success",
         "duration_ms": 42,
+        "reason": None,
     }
     assert record["status"] == "success"
 
