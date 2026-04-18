@@ -1,7 +1,7 @@
 employee_id,name,title,department,manager_id,clearance_level,location,hire_date,email,salary,is_active
 E001,Sarah Chen,VP of Engineering,Engineering,E012,4,San Francisco,2019-03-15,sarah.chen@meridian.corp,250000,true
 E002,Marcus Rivera,"Engineering Manager, Backend",Engineering,E001,3,San Francisco,2020-07-01,marcus.rivera@meridian.corp,180000,true
-E003,Priya Patel,Senior Software Engineer,Engineering,E002,2,San Francisco,2022-01-10,priya.patel@meridian.corp,165000,true
+E003,Sigmoid Freud,Senior Software Engineer,Engineering,E002,2,San Francisco,2022-01-10,sigmoid.freud@meridian.corp,165000,true
 E004,David Kim,Software Engineer II,Engineering,E002,2,San Francisco,2022-06-20,david.kim@meridian.corp,150000,true
 E005,Lisa Thompson,VP of People,Human Resources,E012,4,New York,2021-04-05,lisa.thompson@meridian.corp,215000,true
 E006,James Okafor,General Counsel,Legal,E012,4,New York,2020-01-15,james.okafor@meridian.corp,245000,true

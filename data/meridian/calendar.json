@@ -10,7 +10,7 @@
   {"event_id": "C009", "organizer_id": "E012", "attendees": ["E001", "E005", "E006", "E007", "E013", "E014", "E015", "E016", "E017", "E045"], "subject": "Quarterly Exec Offsite - Day 2", "classification": 4, "start": "2026-03-06T14:00:00Z", "end": "2026-03-06T22:00:00Z"},
   {"event_id": "C010", "organizer_id": "E001", "attendees": ["E002"], "subject": "1:1 Sarah / Marcus", "classification": 2, "start": "2026-04-13T17:00:00Z", "end": "2026-04-13T17:30:00Z"},
   {"event_id": "C011", "organizer_id": "E001", "attendees": ["E018"], "subject": "1:1 Sarah / Raj", "classification": 2, "start": "2026-04-13T17:30:00Z", "end": "2026-04-13T18:00:00Z"},
-  {"event_id": "C012", "organizer_id": "E002", "attendees": ["E003"], "subject": "1:1 Marcus / Priya", "classification": 2, "start": "2026-04-14T16:00:00Z", "end": "2026-04-14T16:30:00Z"},
+  {"event_id": "C012", "organizer_id": "E002", "attendees": ["E003"], "subject": "1:1 Marcus / Sigmoid", "classification": 2, "start": "2026-04-14T16:00:00Z", "end": "2026-04-14T16:30:00Z"},
   {"event_id": "C013", "organizer_id": "E002", "attendees": ["E004"], "subject": "1:1 Marcus / David Kim", "classification": 2, "start": "2026-04-14T16:30:00Z", "end": "2026-04-14T17:00:00Z"},
   {"event_id": "C014", "organizer_id": "E002", "attendees": ["E027"], "subject": "1:1 Marcus / David Anderson", "classification": 2, "start": "2026-04-14T17:00:00Z", "end": "2026-04-14T17:30:00Z"},
   {"event_id": "C015", "organizer_id": "E002", "attendees": ["E028"], "subject": "1:1 Marcus / Yuki", "classification": 2, "start": "2026-04-14T17:30:00Z", "end": "2026-04-14T18:00:00Z"},

@@ -24,7 +24,7 @@ wins.
 
 - **Sarah Chen** — VP of Engineering (E001), reports to CEO
   - Marcus Rivera — Engineering Manager, Backend (E002)
-    - Priya Patel — Senior Software Engineer (E003)
+    - Sigmoid Freud — Senior Software Engineer (E003)
     - David Kim — Software Engineer II (E004)
     - David Anderson — Senior Software Engineer (E027)
     - Yuki Tanaka — Software Engineer II (E028)

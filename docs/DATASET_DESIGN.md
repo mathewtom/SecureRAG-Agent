@@ -201,7 +201,7 @@ questions. See the sample-query section below.
 
 ### 2-hop
 
-- "Who is Priya Patel's skip-level manager?"
+- "Who is Sigmoid Freud's skip-level manager?"
   → `lookup_employee(E003)` → get `manager_id=E002` → `lookup_employee(E002)` →
     get `manager_id=E001`. Answer: Sarah Chen.
 

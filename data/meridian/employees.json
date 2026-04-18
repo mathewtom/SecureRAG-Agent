@@ -27,14 +27,14 @@
   },
   {
     "employee_id": "E003",
-    "name": "Priya Patel",
+    "name": "Sigmoid Freud",
     "title": "Senior Software Engineer",
     "department": "Engineering",
     "manager_id": "E002",
     "clearance_level": 2,
     "location": "San Francisco",
     "hire_date": "2022-01-10",
-    "email": "priya.patel@meridian.corp",
+    "email": "sigmoid.freud@meridian.corp",
     "salary": 165000,
     "is_active": true
   },
