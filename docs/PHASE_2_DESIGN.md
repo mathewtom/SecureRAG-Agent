@@ -1,7 +1,7 @@
 # Phase 2 Design — LangGraph Agent Framework
 
 > Date: 2026-04-17
-> Status: design approved, implementation pending
+> Status: shipped (Phase 2 + Phase 2.5 refinements)
 > Supersedes the Phase 2 section of `AGENTIC_PIVOT_PLAN.md` where they
 > differ; the plan is the roadmap, this document is the architecture.
 
@@ -89,17 +89,28 @@ from operator import add as list_add
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
+class ToolStatus(StrEnum):
+    SUCCESS = "success"
+    ERROR = "error"
+    DENIED = "denied"
+
+class SecurityDecision(StrEnum):
+    PASS = "pass"
+    BLOCK = "block"
+    FLAG = "flag"
+
 class ToolCallRecord(TypedDict):
     step_index: int
     tool_name: str
-    args_hash: str          # sha256(sorted_json(args))[:16]
-    status: str             # "success" | "error" | "denied"
+    args_sha256: str        # sha256(sorted_json(args))[:16]
+    status: ToolStatus      # StrEnum: "success" | "error" | "denied"
     duration_ms: int
+    reason: str | None      # populated for status=DENIED or status=ERROR
 
 class SecurityVerdict(TypedDict):
-    layer: str              # "rate_limit" | "injection_scan" | ...
-    stage: str              # "entry" | "exit"
-    verdict: str            # "pass" | "block" | "flag"
+    layer: str              # e.g. "injection_scan", "classification_guard"
+    stage: str              # "entry" | "in_graph" | "exit"
+    verdict: SecurityDecision  # StrEnum: "pass" | "block" | "flag"
     details: str | None
 
 class AgentState(TypedDict):
@@ -150,7 +161,7 @@ class AgentState(TypedDict):
 ```python
 graph = StateGraph(AgentState)
 graph.add_node("agent_llm", agent_llm_node)
-graph.add_node("tools", AuthenticatedToolNode([search_documents], retriever))
+graph.add_node("tools", AuthenticatedToolNode(handlers=registry, audit=audit_log))
 graph.set_entry_point("agent_llm")
 graph.add_conditional_edges("agent_llm", _route_after_llm,
                             {"tools": "tools", "end": END})
@@ -178,35 +189,59 @@ records such attempts as a `tool_call_log` entry tagged with
 # src/agent/graph.py (AuthenticatedToolNode, abbreviated)
 
 class AuthenticatedToolNode:
-    def __init__(self, tools, retriever):
-        self._tools = {t.name: t for t in tools}
-        self._retriever = retriever
+    def __init__(
+        self,
+        *,
+        handlers: ToolRegistry,   # registry pattern: dict[name, handler]
+        audit: Any | None = None,
+    ) -> None:
+        self._handlers = handlers
+        self._audit = audit
 
     def __call__(self, state: AgentState) -> dict:
         last = state["messages"][-1]
-        out_messages, out_records = [], []
+        new_messages, new_records = [], []
 
         for tc in last.tool_calls:
-            args = tc["args"]
-            if "user_id" in args:                     # symbolic check
-                # LLM attempted to override identity; ignore the value,
-                # record the attempt, continue with trusted identity
-                out_records.append(_denial_record(tc, state,
-                    reason="llm_supplied_user_id_rejected"))
+            # Normalize keys to lowercase before the identity check —
+            # guards against {"USER_ID": ..., "User_Id": ...} variants.
+            raw_args = {k.lower(): v for k, v in (tc.get("args") or {}).items()}
 
-            result, status, ms = self._invoke(tc["name"], args,
-                                              user_id=state["user_id"])
-            out_messages.append(ToolMessage(content=str(result),
+            if "user_id" in raw_args:                 # symbolic check
+                new_records.append(_denial_record(
+                    step_index=..., tool_name=tc["name"], args=raw_args,
+                    reason="llm_supplied_user_id_rejected",
+                ))
+                if self._audit is not None:
+                    self._audit.log_denial(          # emitted immediately
+                        request_id=state["request_id"],
+                        user_id=state["user_id"],
+                        layer="authenticated_tool_node",
+                        reason="llm_supplied_user_id_rejected",
+                    )
+                raw_args.pop("user_id")
+
+            result = self._invoke(tc["name"], raw_args, user_id=state["user_id"])
+            new_messages.append(ToolMessage(content=_serialize_result(result),
                                             tool_call_id=tc["id"]))
-            out_records.append(_success_record(tc, state, ms, status))
+            new_records.append(ToolCallRecord(
+                ..., args_sha256=_args_hash(raw_args), status=ToolStatus.SUCCESS, ...
+            ))
 
         budget_exhausted = state["step_count"] + 1 >= state["max_steps"]
         return {
-            "messages": out_messages,
-            "tool_call_log": out_records,
+            "messages": new_messages,
+            "tool_call_log": new_records,
             "step_count": state["step_count"] + 1,
             "termination_reason": "budget_exhausted" if budget_exhausted else None,
         }
+
+    def _invoke(self, name: str, args: dict, *, user_id: str) -> Any:
+        # Registry dispatch — no if/elif chain. Phase 3 tool = one registry entry.
+        handler = self._handlers.get(name)
+        if handler is None:
+            raise ValueError(f"unknown tool: {name!r}")
+        return handler(args, user_id=user_id)
 ```
 
 ## Placeholder tool
@@ -247,8 +282,13 @@ membership checks.
 # src/agent/retriever.py
 
 class MeridianRetriever:
-    def __init__(self, chroma_client, collection_name, employees_by_id):
-        self._collection = chroma_client.get_collection(collection_name)
+    def __init__(
+        self,
+        *,
+        collection: Any,            # chromadb Collection, passed directly
+        employees_by_id: dict[str, Employee],
+    ) -> None:
+        self._collection = collection
         self._employees = employees_by_id
 
     def search(self, *, query: str, user_id: str, k: int = 5) -> list[dict]:
@@ -336,7 +376,10 @@ class AgenticChain:
 
         self._rate.check(user_id)
         for s in self._in:
-            r = s.scan(normalized)
+            # _call_scanner introspects each scanner's signature and
+            # passes only the kwargs it declares; Sentinel-inherited
+            # scanners have heterogeneous signatures.
+            r = _call_scanner(s, normalized)
             self._audit.log_verdict(rid, user_id, s.name, "entry", r)
             if r.blocked:
                 raise QueryBlocked(r.reason)
@@ -345,9 +388,10 @@ class AgenticChain:
         initial = _initial_state(rid, user_id, normalized,
                                  seed_verdicts=entry_verdicts)
 
+        recursion_limit = self._max_steps * 2 + 10   # see note below
         final_state = self._graph.invoke(
             initial,
-            config={"recursion_limit": 50},     # see note below
+            config={"recursion_limit": recursion_limit},
         )
 
         if final_state["termination_reason"] == "budget_exhausted":
@@ -356,9 +400,10 @@ class AgenticChain:
             raise BudgetExhausted(max_steps=final_state["max_steps"])
 
         answer = _extract_answer(final_state)
+        final_state["final_answer"] = answer   # written back so audit trail is complete
 
         for s in self._out:
-            r = s.scan(answer, question=normalized, user_id=user_id)
+            r = _call_scanner(s, answer, question=normalized, user_id=user_id)
             final_state["security_verdicts"].append(
                 _to_verdict(s.name, "exit", r)
             )
@@ -410,24 +455,29 @@ The state field `security_verdicts` is populated at three points:
 
 1. **Entry** — the wrapper seeds it with one verdict per input
    scanner before calling `graph.invoke()`.
-2. **In-graph** — `AuthenticatedToolNode` appends verdicts when the
-   LLM attempts an identity override (or, in future phases, when a
-   per-tool authorization check rejects an operation).
+2. **In-graph** — `AuthenticatedToolNode` appends denial records when
+   the LLM attempts an identity override or a tool invocation fails;
+   it also calls `audit.log_denial` immediately so the event is
+   durably logged even if the graph later aborts.
 3. **Exit** — the wrapper appends one verdict per output scanner
    after `graph.invoke()` returns and before the response is built.
 
 Phase 4 will read `final_state["security_verdicts"]` +
-`final_state["tool_call_log"]` as the audit record for a request.
+`final_state["tool_call_log"]` as the audit record for a request;
+the per-event `audit.log_denial` calls already provide real-time
+coverage for identity-override and tool-error events.
 
-### Why `recursion_limit=50` on `graph.invoke`
+### Why `recursion_limit` is derived from `max_steps`
 
 LangGraph counts each node execution as one super-step. The worst-case
 loop is `agent_llm` → `tools` → `agent_llm` → … repeated up to
-`max_steps=20` times, which is ~40 node executions. Setting
-`recursion_limit=50` gives a small safety margin so LangGraph's
-internal cap never fires before our explicit `max_steps` check does.
-If LangGraph hits 50 it means something is wrong (an unintended loop
-in the graph topology) and we want a hard failure.
+`max_steps` times, which is ~`2 * max_steps` node executions. The
+wrapper derives the limit as `max_steps * 2 + 10`, giving a small
+safety margin so LangGraph's internal cap never fires before our
+explicit `max_steps` check does. With the default `max_steps=20` this
+yields `recursion_limit=50`. If LangGraph hits its cap it means an
+unintended loop in the graph topology — a hard failure is the right
+outcome.
 
 ## Test plan
 
@@ -441,7 +491,8 @@ in the graph topology) and we want a hard failure.
 | `test_meridian_pipeline.py` | Ingest `data/meridian/documents/` → poisoned docs excluded → non-poisoned embedded with correct metadata; classification tier preserved |
 
 `test_basic_loop.py` runs end-to-end against a live Ollama with
-`llama3.1:8b` and a freshly-built ChromaDB collection. It carries the
+`llama3.3:70b` (the default; Llama Guard output scanning is enabled)
+and a freshly-built ChromaDB collection. It carries the
 `integration` pytest marker (already defined in `pyproject.toml`) so
 ordinary `uv run pytest` runs skip it. All other agent tests mock the
 LLM via a stub that returns canned `AIMessage(tool_calls=[...])`
@@ -467,11 +518,35 @@ Run `uv add langgraph` then `uv sync`. `uv` resolves a compatible
 - Multi-hop evaluation harness (Phase 6)
 - Red-team ingestion of `documents/poisoned/` (Phase 5+)
 
+## Implementation deltas vs. this spec
+
+The shipped implementation refined this design in Phase 2.5:
+
+- Identity records use `args_sha256` (not `args_hash`); `verdict` and
+  `status` are StrEnum types.
+- Tools dispatch via `src/agent/tools/registry.py` (registry pattern),
+  not an `if/elif` chain in `AuthenticatedToolNode._invoke`. Adding a
+  tool in Phase 3 is one entry in the registry plus one line in
+  `bind_tools([...])`.
+- `AuthenticatedToolNode` now emits `audit.log_denial` for in-graph
+  identity-override and tool-error events (originally deferred to
+  Phase 4).
+- `recursion_limit` is derived from `max_steps` (`max_steps * 2 + 10`),
+  not hardcoded.
+- Default LLM is `llama3.3:70b`; Llama Guard semantic scanning is
+  enabled by default at the output layer.
+- `final_answer` is populated by `AgenticChain` after extraction so
+  the audit trail in `state` is complete.
+
+Refer to `src/agent/` for current ground truth where this document
+disagrees with code.
+
 ## Open questions for Phase 3 pre-work
 
-- Tool registration pattern: module-level `TOOLS = [...]` list vs.
-  explicit registration in a factory. Pick before Phase 3 starts so
-  the 7 tool modules follow the same convention.
+- ~~Tool registration pattern: module-level `TOOLS = [...]` list vs.
+  explicit registration in a factory.~~ **Resolved:** registry pattern
+  is in `src/agent/tools/registry.py`. Each Phase 3 tool adds one
+  `ToolHandler` to the registry dict; no separate dispatch table.
 - Whether to pin a specific embedding model digest in
   `config/models.yaml` alongside the LLM digest (model-integrity
   primitive already supports it).
