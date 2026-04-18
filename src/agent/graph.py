@@ -17,11 +17,12 @@ from langgraph.graph import END, StateGraph
 from src.agent.prompts import SYSTEM_PROMPT
 from src.agent.state import AgentState, ToolCallRecord, ToolStatus
 from src.agent.tools import search_documents
+from src.agent.tools.registry import ToolRegistry
 
 
 class AuthenticatedToolNode:
-    """LangGraph node that dispatches LLM-requested tool calls to the
-    Meridian retriever with a runtime-injected `user_id`.
+    """LangGraph node that dispatches LLM-requested tool calls through a
+    handler registry with a runtime-injected `user_id`.
 
     Key invariant: the LLM CANNOT set `user_id`. Any `user_id` present
     in tool-call args is ignored; the call proceeds with
@@ -30,8 +31,13 @@ class AuthenticatedToolNode:
     `"llm_supplied_user_id_rejected"`.
     """
 
-    def __init__(self, *, retriever: Any, audit: Any | None = None) -> None:
-        self._retriever = retriever
+    def __init__(
+        self,
+        *,
+        handlers: ToolRegistry,
+        audit: Any | None = None,
+    ) -> None:
+        self._handlers = handlers
         self._audit = audit
 
     def __call__(self, state: AgentState) -> dict[str, Any]:
@@ -118,12 +124,10 @@ class AuthenticatedToolNode:
         return update
 
     def _invoke(self, name: str, args: dict[str, Any], *, user_id: str) -> Any:
-        if name == "search_documents":
-            return self._retriever.search(
-                query=args["query"],
-                user_id=user_id,
-            )
-        raise ValueError(f"unknown tool: {name!r}")
+        handler = self._handlers.get(name)
+        if handler is None:
+            raise ValueError(f"unknown tool: {name!r}")
+        return handler(args, user_id=user_id)
 
 
 def _args_hash(args: dict[str, Any]) -> str:
@@ -152,7 +156,7 @@ def _serialize_result(result: Any) -> str:
 
 # ---------- ReAct graph wiring (Task 8) -----------------------------
 
-def build_graph(*, llm: Any, retriever: Any, audit: Any | None = None) -> Any:
+def build_graph(*, llm: Any, handlers: ToolRegistry, audit: Any | None = None) -> Any:
     """Build the LangGraph ReAct state machine.
 
     Parameters
@@ -161,8 +165,10 @@ def build_graph(*, llm: Any, retriever: Any, audit: Any | None = None) -> Any:
         Any object implementing `bind_tools(list) -> self` and
         `invoke(messages) -> AIMessage`. Real code passes an
         Ollama-backed LangChain chat model; tests pass a stub.
-    retriever
-        Object with `search(query, user_id) -> list[dict]`.
+    handlers
+        Registry mapping tool name to its authorized handler callable.
+        See ``src.agent.tools.registry`` for the handler protocol and
+        factory functions.
     audit
         Optional audit module. When provided, denial and error events
         inside the tool node emit structured log entries via
@@ -180,7 +186,7 @@ def build_graph(*, llm: Any, retriever: Any, audit: Any | None = None) -> Any:
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
 
-    tools_node = AuthenticatedToolNode(retriever=retriever, audit=audit)
+    tools_node = AuthenticatedToolNode(handlers=handlers, audit=audit)
 
     graph: StateGraph[AgentState] = StateGraph(AgentState)
     graph.add_node("agent_llm", agent_llm_node)

@@ -12,6 +12,12 @@ from langchain_core.messages import AIMessage, ToolMessage
 
 from src.agent.graph import AuthenticatedToolNode
 from src.agent.state import initial_state
+from src.agent.tools.registry import make_search_documents_handler
+
+
+def _node_with_retriever(retriever: Mock, audit: Mock | None = None) -> AuthenticatedToolNode:
+    handlers = {"search_documents": make_search_documents_handler(retriever)}
+    return AuthenticatedToolNode(handlers=handlers, audit=audit)
 
 
 def _state_with_tool_call(user_id: str, tool_args: dict) -> dict:
@@ -36,7 +42,7 @@ def test_user_id_from_state_reaches_tool():
     retriever.search.return_value = [{"doc_id": "d1", "content": "hi",
                                       "metadata": {}}]
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = _state_with_tool_call(
         user_id="E003",
         tool_args={"query": "vacation policy"},
@@ -53,7 +59,7 @@ def test_llm_supplied_user_id_is_rejected_and_logged():
     retriever = Mock()
     retriever.search.return_value = []
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = _state_with_tool_call(
         user_id="E003",
         tool_args={"query": "salaries", "user_id": "E012"},  # LLM forgery
@@ -74,7 +80,7 @@ def test_step_count_incremented():
     retriever = Mock()
     retriever.search.return_value = []
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = _state_with_tool_call("E003", {"query": "q"})
     state["step_count"] = 5
 
@@ -87,7 +93,7 @@ def test_tool_message_appended_with_correct_call_id():
     retriever.search.return_value = [{"doc_id": "d1", "content": "hi",
                                       "metadata": {}}]
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = _state_with_tool_call("E003", {"query": "q"})
 
     out = node(state)
@@ -105,7 +111,7 @@ def test_retrieved_doc_ids_accumulated():
         {"doc_id": "d2", "content": "b", "metadata": {}},
     ]
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = _state_with_tool_call("E003", {"query": "q"})
 
     out = node(state)
@@ -116,7 +122,7 @@ def test_budget_exhaustion_sets_termination_reason():
     retriever = Mock()
     retriever.search.return_value = []
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = _state_with_tool_call("E003", {"query": "q"})
     state["step_count"] = 19   # next step will be 20 == max_steps
     state["max_steps"] = 20
@@ -128,7 +134,7 @@ def test_budget_exhaustion_sets_termination_reason():
 def test_unknown_tool_records_error_not_crash():
     retriever = Mock()
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = initial_state(
         request_id="r", user_id="E003", query="q", max_steps=20,
     )
@@ -153,7 +159,7 @@ def test_case_variant_user_id_also_rejected():
     retriever = Mock()
     retriever.search.return_value = []
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = _state_with_tool_call(
         user_id="E003",
         tool_args={"query": "salaries", "USER_ID": "E012"},
@@ -179,7 +185,7 @@ def test_multiple_tool_calls_in_one_step():
         [{"doc_id": "d2", "content": "b", "metadata": {}}],
     ]
 
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = initial_state(
         request_id="r", user_id="E003", query="q", max_steps=20,
     )
@@ -209,7 +215,7 @@ def test_in_graph_denial_calls_audit_log_denial() -> None:
     retriever.search.return_value = []
     audit_mock = Mock()
 
-    node = AuthenticatedToolNode(retriever=retriever, audit=audit_mock)
+    node = _node_with_retriever(retriever, audit=audit_mock)
     state = _state_with_tool_call(
         user_id="E003",
         tool_args={"query": "salaries", "user_id": "E012"},
@@ -230,7 +236,7 @@ def test_unknown_tool_error_calls_audit_log_denial() -> None:
     retriever = Mock()
     audit_mock = Mock()
 
-    node = AuthenticatedToolNode(retriever=retriever, audit=audit_mock)
+    node = _node_with_retriever(retriever, audit=audit_mock)
     state = initial_state(
         request_id="r", user_id="E003", query="q", max_steps=20,
     )
@@ -256,7 +262,7 @@ def test_audit_optional_no_crash_when_omitted() -> None:
     retriever.search.return_value = []
 
     # No audit passed
-    node = AuthenticatedToolNode(retriever=retriever)
+    node = _node_with_retriever(retriever)
     state = _state_with_tool_call(
         user_id="E003",
         tool_args={"query": "q", "user_id": "E012"},

@@ -97,6 +97,7 @@ def _build_chain() -> Any:
     from src import audit
     from src.agent.graph import build_graph
     from src.agent.retriever import MeridianRetriever
+    from src.agent.tools.registry import ToolRegistry, make_search_documents_handler
     from src.agent.wrapper import AgenticChain
     from src.data.loaders import load_employees
     from src.model_integrity import verify_model_digest
@@ -124,8 +125,12 @@ def _build_chain() -> Any:
         employees_by_id=employees,
     )
 
+    handlers: ToolRegistry = {
+        "search_documents": make_search_documents_handler(retriever),
+    }
+
     llm = ChatOllama(model=model, base_url=ollama_host, temperature=0)
-    graph = build_graph(llm=llm, retriever=retriever, audit=audit)
+    graph = build_graph(llm=llm, handlers=handlers, audit=audit)
 
     rate = RateLimiter()
 

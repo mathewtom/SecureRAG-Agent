@@ -7,6 +7,11 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from src.agent.graph import build_graph
 from src.agent.state import initial_state
+from src.agent.tools.registry import make_search_documents_handler
+
+
+def _handlers_for(retriever: Mock) -> dict[str, Any]:
+    return {"search_documents": make_search_documents_handler(retriever)}
 
 
 class StubLLM:
@@ -27,7 +32,7 @@ class StubLLM:
 def test_direct_answer_no_tool_call_terminates():
     llm = StubLLM([AIMessage(content="The answer is 42.")])
     retriever = Mock()
-    graph = build_graph(llm=llm, retriever=retriever)
+    graph = build_graph(llm=llm, handlers=_handlers_for(retriever))
 
     state = initial_state(
         request_id="r", user_id="E003", query="what is the answer?",
@@ -57,7 +62,7 @@ def test_single_tool_call_then_answer():
         ),
         AIMessage(content="Parking reimbursement is $250/month."),
     ])
-    graph = build_graph(llm=llm, retriever=retriever)
+    graph = build_graph(llm=llm, handlers=_handlers_for(retriever))
 
     state = initial_state(
         request_id="r", user_id="E003",
@@ -86,7 +91,7 @@ def test_budget_exhaustion_terminates_loop():
             )
 
     llm = LoopingLLM([])
-    graph = build_graph(llm=llm, retriever=retriever)
+    graph = build_graph(llm=llm, handlers=_handlers_for(retriever))
 
     state = initial_state(
         request_id="r", user_id="E003", query="q", max_steps=3,
@@ -100,7 +105,7 @@ def test_budget_exhaustion_terminates_loop():
 def test_bind_tools_called_with_search_documents():
     llm = StubLLM([AIMessage(content="done")])
     retriever = Mock()
-    build_graph(llm=llm, retriever=retriever)
+    build_graph(llm=llm, handlers=_handlers_for(retriever))
 
     names = [t.name for t in llm.bind_tools_called_with]
     assert names == ["search_documents"]
@@ -117,7 +122,7 @@ def test_system_prompt_prepended_to_messages_for_llm():
 
     llm = CapturingLLM([])
     retriever = Mock()
-    graph = build_graph(llm=llm, retriever=retriever)
+    graph = build_graph(llm=llm, handlers=_handlers_for(retriever))
 
     state = initial_state(
         request_id="r", user_id="E003", query="hi", max_steps=20,
