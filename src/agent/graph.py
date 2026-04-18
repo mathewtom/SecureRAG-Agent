@@ -11,9 +11,12 @@ import json
 import time
 from typing import Any
 
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
+from langgraph.graph import END, StateGraph
 
+from src.agent.prompts import SYSTEM_PROMPT
 from src.agent.state import AgentState, ToolCallRecord, ToolStatus
+from src.agent.tools import search_documents
 
 
 class AuthenticatedToolNode:
@@ -130,3 +133,58 @@ def _serialize_result(result: Any) -> str:
     if isinstance(result, list):
         return json.dumps(result, default=str)
     return str(result)
+
+
+# ---------- ReAct graph wiring (Task 8) -----------------------------
+
+def build_graph(*, llm: Any, retriever: Any) -> Any:
+    """Build the LangGraph ReAct state machine.
+
+    Parameters
+    ----------
+    llm
+        Any object implementing `bind_tools(list) -> self` and
+        `invoke(messages) -> AIMessage`. Real code passes an
+        Ollama-backed LangChain chat model; tests pass a stub.
+    retriever
+        Object with `search(query, user_id) -> list[dict]`.
+
+    The budget cap is not a graph parameter - the wrapper seeds
+    `state["max_steps"]` and `AuthenticatedToolNode` enforces it by
+    setting `termination_reason="budget_exhausted"` when the next step
+    would cross the cap.
+    """
+    llm_with_tools = llm.bind_tools([search_documents])
+
+    def agent_llm_node(state: AgentState) -> dict[str, Any]:
+        messages = _prepend_system(state["messages"])
+        response = llm_with_tools.invoke(messages)
+        return {"messages": [response]}
+
+    tools_node = AuthenticatedToolNode(retriever=retriever)
+
+    graph: StateGraph[AgentState] = StateGraph(AgentState)
+    graph.add_node("agent_llm", agent_llm_node)
+    graph.add_node("tools", tools_node)
+    graph.set_entry_point("agent_llm")
+    graph.add_conditional_edges(
+        "agent_llm", _route_after_llm,
+        {"tools": "tools", "end": END},
+    )
+    graph.add_edge("tools", "agent_llm")
+    return graph.compile()
+
+
+def _route_after_llm(state: AgentState) -> str:
+    if state.get("termination_reason") == "budget_exhausted":
+        return "end"
+    last = state["messages"][-1]
+    if isinstance(last, AIMessage) and last.tool_calls:
+        return "tools"
+    return "end"
+
+
+def _prepend_system(messages: list[Any]) -> list[Any]:
+    if messages and isinstance(messages[0], SystemMessage):
+        return messages
+    return [SystemMessage(content=SYSTEM_PROMPT), *messages]
