@@ -29,7 +29,12 @@ from src.agent.tools.registry import ToolHandler
 from src.data.loaders import Employee
 from src.exceptions import AccessDenied
 
-_RULE_SOURCE = "approval_matrix_2026.md"
+# The approval matrix has multiple sections (Expense reports, Vendor
+# and SaaS contracts, Headcount, Settlements). This tool implements
+# only the Expense reports table; the rule_source citation reflects
+# that scope so the LLM doesn't conflate it with vendor / headcount
+# bands when answering downstream questions.
+_RULE_SOURCE = "approval_matrix_2026.md §Expense reports"
 
 
 @dataclass(frozen=True)

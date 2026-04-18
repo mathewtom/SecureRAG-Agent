@@ -1,18 +1,22 @@
 """Tests for shared authorization primitives."""
 
 import datetime
+import datetime as _dt  # alias used in ticket/project/calendar helpers
 
 import pytest
 
 from src.agent.tools.auth import (
     classifications_up_to,
     has_department_clearance,
+    is_calendar_attendee,
     is_in_manager_chain,
+    is_project_member,
+    is_ticket_principal,
     manager_chain,
     restricted_to_allows,
     same_department,
 )
-from src.data.loaders import Employee
+from src.data.loaders import CalendarEvent, Employee, Project, Ticket
 
 
 def _emp(eid: str, *, manager: str | None = None,
@@ -147,3 +151,91 @@ def test_restricted_to_allows_when_recipient_not_listed():
 def test_restricted_to_allows_when_no_restriction():
     assert restricted_to_allows(None, "E003") is True
     assert restricted_to_allows([], "E003") is True
+
+
+# ---------- ticket / project / calendar primitives ------------------------
+
+
+def _ticket(tid: str = "T001", *, owner: str = "E003",
+            assignee: str = "E004") -> Ticket:
+    return Ticket(
+        ticket_id=tid,
+        title="Sample",
+        owner_id=owner,
+        assignee_id=assignee,
+        status="open",
+        classification=2,
+        project_id=None,
+        created_at=_dt.date(2026, 1, 1),
+        type="it",
+    )
+
+
+def _project(pid: str = "P001", *, owner: str = "E001",
+             members: tuple[str, ...] = ("E002", "E003")) -> Project:
+    return Project(
+        project_id=pid,
+        name="Sample",
+        owner_id=owner,
+        members=members,
+        classification="INTERNAL",
+        status="active",
+        start_date=_dt.date(2026, 1, 1),
+        description="x",
+    )
+
+
+def _event(eid: str = "C001", *, organizer: str = "E001",
+           attendees: tuple[str, ...] = ("E002", "E003")) -> CalendarEvent:
+    return CalendarEvent(
+        event_id=eid,
+        organizer_id=organizer,
+        attendees=attendees,
+        subject="Sample",
+        classification=2,
+        start=_dt.datetime(2026, 1, 1, 10, 0,
+                           tzinfo=_dt.timezone.utc),
+        end=_dt.datetime(2026, 1, 1, 11, 0,
+                         tzinfo=_dt.timezone.utc),
+    )
+
+
+def test_is_ticket_principal_owner():
+    assert is_ticket_principal(_ticket(owner="E003"), "E003") is True
+
+
+def test_is_ticket_principal_assignee():
+    assert is_ticket_principal(_ticket(assignee="E004"), "E004") is True
+
+
+def test_is_ticket_principal_unrelated_user():
+    t = _ticket(owner="E003", assignee="E004")
+    assert is_ticket_principal(t, "E999") is False
+
+
+def test_is_project_member_owner():
+    assert is_project_member(_project(owner="E001"), "E001") is True
+
+
+def test_is_project_member_in_members_list():
+    p = _project(owner="E001", members=("E002", "E003"))
+    assert is_project_member(p, "E003") is True
+
+
+def test_is_project_member_not_in_project():
+    p = _project(owner="E001", members=("E002",))
+    assert is_project_member(p, "E999") is False
+
+
+def test_is_calendar_attendee_organizer():
+    assert is_calendar_attendee(_event(organizer="E001"), "E001") is True
+
+
+def test_is_calendar_attendee_in_attendee_list():
+    e = _event(organizer="E001", attendees=("E002", "E003"))
+    assert is_calendar_attendee(e, "E003") is True
+
+
+def test_is_calendar_attendee_outsider():
+    e = _event(organizer="E001", attendees=("E002",))
+    assert is_calendar_attendee(e, "E999") is False

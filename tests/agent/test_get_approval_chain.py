@@ -158,7 +158,7 @@ def test_result_includes_amount_and_rule_source(handler):
         user_id="E005",
     )
     assert result["amount_usd"] == 500.0
-    assert result["rule_source"] == "approval_matrix_2026.md"
+    assert result["rule_source"] == "approval_matrix_2026.md §Expense reports"
 
 
 def test_result_approvers_include_name(handler):
@@ -266,3 +266,45 @@ def test_zero_amount_is_manager_band(handler):
         user_id="E005",
     )
     assert result["matrix_band"] == "Up to $1,000"
+
+
+# ---------- _resolve_role edge cases (org-chart shape gaps) ---------------
+
+def _flat_org() -> dict[str, Employee]:
+    """Org with no Director (only CEO + IC) - $5k band cannot resolve."""
+    return {
+        "E001": _emp("E001", manager=None, dept="Executive",
+                     title="Chief Executive Officer", clearance=4),
+        "E002": _emp("E002", manager="E001", dept="Engineering",
+                     title="Software Engineer"),
+    }
+
+
+def _no_cfo_org() -> dict[str, Employee]:
+    """Org without a CFO - the $75k band cannot resolve the CFO role."""
+    return {
+        "E001": _emp("E001", manager=None, dept="Executive",
+                     title="Chief Executive Officer", clearance=4),
+        "E002": _emp("E002", manager="E001", dept="Engineering",
+                     title="Software Engineer"),
+    }
+
+
+def test_director_band_with_no_director_in_chain_raises_value_error():
+    """If the chain has no Director ancestor, _resolve_role raises
+    ValueError. AuthenticatedToolNode catches it as a tool error."""
+    handler = make_get_approval_chain_handler(employees=_flat_org())
+    with pytest.raises(ValueError, match="Director"):
+        handler(
+            {"employee_id": "E002", "amount_usd": 5000.0},
+            user_id="E002",
+        )
+
+
+def test_cfo_band_with_no_cfo_in_directory_raises_value_error():
+    handler = make_get_approval_chain_handler(employees=_no_cfo_org())
+    with pytest.raises(ValueError, match="Chief Financial Officer"):
+        handler(
+            {"employee_id": "E002", "amount_usd": 75000.0},
+            user_id="E002",
+        )

@@ -13,7 +13,7 @@ Why pure functions, not a class:
 
 from __future__ import annotations
 
-from src.data.loaders import Employee
+from src.data.loaders import CalendarEvent, Employee, Project, Ticket
 
 _CLASSIFICATION_ORDER = ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"]
 
@@ -112,3 +112,33 @@ def restricted_to_allows(
     if not restricted_to:
         return True
     return user_id in restricted_to
+
+
+# ---------- ticket / project / calendar visibility primitives -------------
+
+
+def is_ticket_principal(ticket: Ticket, user_id: str) -> bool:
+    """True iff `user_id` is the ticket's owner or assignee.
+
+    The tool surface uses this to gate per-ticket detail access:
+    `get_ticket_detail` requires owner / assignee / project-member;
+    `list_my_tickets` filters the visible set down to tickets where
+    this returns True.
+    """
+    return user_id in (ticket.owner_id, ticket.assignee_id)
+
+
+def is_project_member(project: Project, user_id: str) -> bool:
+    """True iff `user_id` is the project owner or in the members
+    list. Used by `get_ticket_detail` for project-scoped tickets."""
+    return user_id == project.owner_id or user_id in project.members
+
+
+def is_calendar_attendee(event: CalendarEvent, user_id: str) -> bool:
+    """True iff `user_id` is the event organizer or in attendees.
+
+    `list_calendar_events` uses this to decide whether to return the
+    full event (subject + attendee list) vs. a busy placeholder
+    (start, end, classification only) to non-attendees.
+    """
+    return user_id == event.organizer_id or user_id in event.attendees
