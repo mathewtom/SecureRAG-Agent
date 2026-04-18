@@ -16,7 +16,7 @@ from langgraph.graph import END, StateGraph
 
 from src.agent.prompts import SYSTEM_PROMPT
 from src.agent.state import AgentState, ToolCallRecord, ToolStatus
-from src.agent.tools import search_documents
+from src.agent.tools import lookup_employee, search_documents
 from src.agent.tools.registry import ToolRegistry
 
 
@@ -179,7 +179,7 @@ def build_graph(*, llm: Any, handlers: ToolRegistry, audit: Any | None = None) -
     setting `termination_reason="budget_exhausted"` when the next step
     would cross the cap.
     """
-    llm_with_tools = llm.bind_tools([search_documents])
+    llm_with_tools = llm.bind_tools([search_documents, lookup_employee])
 
     def agent_llm_node(state: AgentState) -> dict[str, Any]:
         messages = _prepend_system(state["messages"])

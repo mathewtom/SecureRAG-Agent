@@ -102,13 +102,14 @@ def test_budget_exhaustion_terminates_loop():
     assert final["termination_reason"] == "budget_exhausted"
 
 
-def test_bind_tools_called_with_search_documents():
+def test_bind_tools_called_with_all_tools():
     llm = StubLLM([AIMessage(content="done")])
     retriever = Mock()
     build_graph(llm=llm, handlers=_handlers_for(retriever))
 
     names = [t.name for t in llm.bind_tools_called_with]
-    assert names == ["search_documents"]
+    assert "search_documents" in names
+    assert "lookup_employee" in names
 
 
 def test_system_prompt_prepended_to_messages_for_llm():

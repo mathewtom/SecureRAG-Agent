@@ -10,9 +10,9 @@ AuthenticatedToolNode. Phase 3 tools (lookup_employee,
 get_approval_chain, etc.) implement their authorization rules inside
 the handler body.
 
-Registering a new tool is a single edit: import the handler factory,
-add it to the registry dict in `_build_chain`. There is no separate
-dispatch table to keep in sync.
+Registering a new tool is two edits: import the handler factory from the
+tool module in `_build_chain`, and add an entry to the handlers dict.
+There is no separate dispatch table to keep in sync.
 """
 
 from __future__ import annotations
