@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
 from operator import add as _list_add
 from typing import Annotated, Literal, TypedDict
 
@@ -9,18 +10,30 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.graph.message import add_messages
 
 
+class ToolStatus(StrEnum):
+    SUCCESS = "success"
+    ERROR = "error"
+    DENIED = "denied"
+
+
+class SecurityDecision(StrEnum):
+    PASS = "pass"
+    BLOCK = "block"
+    FLAG = "flag"
+
+
 class ToolCallRecord(TypedDict):
     step_index: int
     tool_name: str
-    args_hash: str
-    status: Literal["success", "error", "denied"]
+    args_sha256: str  # SHA-256 hex prefix of JSON-serialized args (set by AuthenticatedToolNode)
+    status: ToolStatus
     duration_ms: int
 
 
 class SecurityVerdict(TypedDict):
-    layer: str
+    layer: str  # e.g. "injection_scan", "classification_guard"
     stage: Literal["entry", "in_graph", "exit"]
-    verdict: Literal["pass", "block", "flag"]
+    verdict: SecurityDecision
     details: str | None
 
 
@@ -30,6 +43,10 @@ class AgentState(TypedDict):
 
     messages: Annotated[list[BaseMessage], add_messages]
 
+    # Incremented by AuthenticatedToolNode once per tool invocation.
+    # No LangGraph reducer is attached because the ReAct loop is sequential;
+    # parallel nodes writing to this field would need an `operator.add`
+    # reducer and delta semantics.
     step_count: int
     max_steps: int
 

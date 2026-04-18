@@ -3,7 +3,6 @@
 from langchain_core.messages import HumanMessage
 
 from src.agent.state import (
-    AgentState,
     SecurityVerdict,
     ToolCallRecord,
     initial_state,
@@ -62,7 +61,7 @@ def test_tool_call_record_shape():
     record: ToolCallRecord = {
         "step_index": 0,
         "tool_name": "search_documents",
-        "args_hash": "abc123",
+        "args_sha256": "abc123",
         "status": "success",
         "duration_ms": 42,
     }
