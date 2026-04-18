@@ -114,6 +114,120 @@ test that proves the defense holds.
 - **Status.** Partially mitigated; relies on Phase 5+ red-team
   evaluation to characterize residual risk.
 
+## Tool-specific entries (Phase 3)
+
+### T-007 — Cross-employee record lookup via `lookup_employee`
+
+- **Description.** An unauthorized employee attempts to look up
+  another employee's record outside their management chain or
+  department, potentially accessing salary, clearance level, or
+  other sensitive HR fields.
+- **OWASP LLM Top 10.** LLM02 (Sensitive Information Disclosure),
+  LLM06 (Excessive Agency).
+- **MITRE ATLAS.** AML.T0024 (Exfiltration via ML Inference API).
+- **Defense.** Symbolic. Handler enforces self / manager-chain /
+  same-dept / HR before returning any record. Salary and clearance
+  are further restricted to self / manager-chain / HR; same-dept
+  callers receive `"[REDACTED]"` for those fields. Unknown target
+  returns `AccessDenied` identical to unauthorized access — no
+  differential leakage.
+- **Tests.** `tests/agent/test_lookup_employee.py::test_cross_department_lookup_denied`,
+  `::test_salary_redacted_for_same_dept_caller`.
+- **Status.** Mitigated.
+
+### T-008 — Approval-chain enumeration via `get_approval_chain`
+
+- **Description.** A caller probes for approval thresholds or maps
+  signature authority across departments by querying approval chains
+  for arbitrary employees or amounts.
+- **OWASP LLM Top 10.** LLM02 (Sensitive Information Disclosure),
+  LLM06 (Excessive Agency).
+- **MITRE ATLAS.** AML.T0024.
+- **Defense.** Symbolic. Handler restricts callers to self /
+  manager-chain / Finance / HR. The matrix bands themselves are
+  public policy (documented in `approval_matrix_2026.md`) so
+  exposing band thresholds carries no enumeration risk; the resolved
+  approver IDs are gated by org-chart authorization. `rule_source`
+  is pinned to `"approval_matrix_2026.md §Expense reports"` so LLM
+  citations are bounded to what the tool actually implements.
+- **Tests.** `tests/agent/test_get_approval_chain.py::test_sales_outsider_denied`.
+- **Status.** Mitigated.
+
+### T-009 — Ticket detail enumeration via `get_ticket_detail`
+
+- **Description.** A caller iterates ticket IDs to discover which
+  tickets exist. A system that returns distinct errors for
+  "not found" vs. "not authorized" leaks existence information.
+- **OWASP LLM Top 10.** LLM02 (Sensitive Information Disclosure).
+- **MITRE ATLAS.** AML.T0024.
+- **Defense.** Symbolic. Unknown ticket ID and unauthorized caller
+  both raise `AccessDenied` with the same exception class — no
+  differential error path. Callers cannot distinguish a non-existent
+  ticket from one they are not permitted to see.
+- **Tests.** `tests/agent/test_get_ticket_detail.py::test_unknown_ticket_denied`.
+- **Status.** Mitigated.
+
+### T-010 — Calendar leakage of restricted meetings
+
+- **Description.** A caller queries the calendar to discover the
+  subjects, attendees, or organizers of meetings they are not part
+  of — especially RESTRICTED-tier events such as board prep,
+  executive offsites, or M&A weekly meetings.
+- **OWASP LLM Top 10.** LLM02 (Sensitive Information Disclosure).
+- **MITRE ATLAS.** AML.T0024.
+- **Defense.** Symbolic. Handler applies busy-placeholder reduction
+  for non-attendees: `subject`, `organizer_id`, and `attendees` are
+  stripped from the returned record. The placeholder retains only
+  `{event_id, classification, start, end}`, giving enough
+  information for scheduling without leaking meeting content or
+  participant identity.
+- **Tests.** `tests/agent/test_list_calendar_events.py::test_non_attendee_sees_busy_placeholder`,
+  `::test_restricted_event_subject_hidden_from_non_attendee`.
+- **Status.** Mitigated.
+
+### T-011 — Audit-log spam via `escalate_to_human`
+
+- **Description.** A caller — or a coerced agent — loops escalation
+  calls to flood the audit log, degrading the signal-to-noise ratio
+  for human reviewers and potentially masking concurrent attacks.
+- **OWASP LLM Top 10.** LLM10 (Unbounded Consumption).
+- **MITRE ATLAS.** AML.T0029 (Denial of ML Service).
+- **Defense.** The agent entry-point rate limiter is shared across
+  all tool paths; `escalate_to_human` counts toward the per-request
+  `max_steps` budget (T-002), so unbounded escalation calls are
+  bounded by the same wrapper that caps other tool loops. The audit
+  log is structured so escalations cluster identifiably during
+  post-hoc analysis.
+- **Tests.** Covered indirectly by `tests/agent/test_tool_node.py::test_budget_exhaustion_sets_termination_reason`
+  (budget cap applies to all tools including escalation). Dedicated
+  escalation-spam test deferred to Phase 5+ red-team harness.
+- **Status.** Partially mitigated. Bulk escalation as a DoS on
+  human reviewers (rather than on compute) is residual risk when
+  `max_steps` is set high. Reviewer-side rate limiting is a Phase 4
+  candidate.
+
+### T-012 — Phantom-user attribution
+
+- **Description.** A caller whose `user_id` is not in the employee
+  directory could — without a defensive check — cause audit-log
+  entries attributed to that phantom ID, muddying forensic trails
+  and potentially allowing an attacker to plant false attribution.
+- **OWASP LLM Top 10.** LLM02 (Sensitive Information Disclosure),
+  LLM06 (Excessive Agency).
+- **MITRE ATLAS.** AML.T0051 (LLM Prompt Injection — identity
+  fabrication variant).
+- **Defense.** Symbolic. Every tool handler validates
+  `user_id in employees` before any other logic and raises
+  `AccessDenied` for unknown callers. This includes
+  `escalate_to_human`, which otherwise has no per-call authorization
+  requirement — the check is present specifically to prevent
+  phantom-user audit noise.
+- **Tests.** `*::test_unknown_user_*_denied` across all six Phase 3
+  test files (`test_lookup_employee.py`, `test_get_approval_chain.py`,
+  `test_list_my_tickets.py`, `test_get_ticket_detail.py`,
+  `test_list_calendar_events.py`, `test_escalate_to_human.py`).
+- **Status.** Mitigated.
+
 ## Out of scope
 
 - Network-layer attacks (TLS, DNS, infrastructure) — handled by
