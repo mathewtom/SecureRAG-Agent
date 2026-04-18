@@ -3,6 +3,7 @@
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 
 @dataclass
@@ -148,6 +149,8 @@ _REGEX_PATTERNS: list[tuple[str, re.Pattern, Callable | None]] = [
 
 class CredentialDetector:
     """Detects API keys, tokens, and other credentials in text via regex."""
+
+    name: ClassVar[str] = "credential_detector"
 
     def scan(self, text: str) -> CredentialScanResult:
         """Scan text for credentials and return redacted text with match metadata."""

@@ -134,33 +134,25 @@ def _build_chain() -> Any:
 
     rate = RateLimiter()
 
-    # Scanners are typed as Any so mypy does not complain about the .name
-    # attribute we set below. The scanner classes are Sentinel-inherited and
-    # do not declare .name; setting it here keeps naming logic in one place
-    # without modifying inherited source files.
-    injection_scanner: Any = InjectionScanner(threshold=5)
-    injection_scanner.name = "injection_scan"
+    injection_scanner = InjectionScanner(threshold=5)
 
     # EmbeddingInjectionDetector requires a live embedding function at
     # construction time (it pre-embeds the corpus), so it is wired as an
     # optional second-pass scanner only when an embedding function is available.
     # For now the regex InjectionScanner provides the entry-layer coverage.
-    input_scanners: list[Any] = [injection_scanner]
+    input_scanners = [injection_scanner]
 
-    output_scanner_obj: Any = OutputScanner(ollama_host=ollama_host)
-    output_scanner_obj.name = "output_scan"
+    output_scanner_obj = OutputScanner(ollama_host=ollama_host)
 
-    classification_guard_obj: Any = ClassificationGuard(
+    classification_guard_obj = ClassificationGuard(
         user_accessible_classifications={
             "PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED",
         },
     )
-    classification_guard_obj.name = "classification_guard"
 
-    credential_detector_obj: Any = CredentialDetector()
-    credential_detector_obj.name = "credential_detector"
+    credential_detector_obj = CredentialDetector()
 
-    output_scanners: list[Any] = [
+    output_scanners = [
         output_scanner_obj,
         classification_guard_obj,
         credential_detector_obj,

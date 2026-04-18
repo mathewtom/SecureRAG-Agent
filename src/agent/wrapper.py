@@ -96,7 +96,13 @@ class AgenticChain:
             seed_verdicts=entry_verdicts,
         )
 
-        final = self._graph.invoke(state, config={"recursion_limit": 50})
+        # LangGraph counts each node execution as one super-step. The worst
+        # case is `agent_llm` -> `tools` alternation up to `max_steps` tool
+        # hops, which is ~2*max_steps node executions. Add a small safety
+        # margin so LangGraph's internal cap never fires before our explicit
+        # max_steps check does.
+        recursion_limit = self._max_steps * 2 + 10
+        final = self._graph.invoke(state, config={"recursion_limit": recursion_limit})
 
         if final.get("termination_reason") == "budget_exhausted":
             self._audit.log_budget_exhausted(
@@ -105,6 +111,7 @@ class AgenticChain:
             raise BudgetExhausted(max_steps=final["max_steps"])
 
         answer = self._extract(final)
+        final["final_answer"] = answer
 
         for scanner in self._out:
             result = _call_scanner(scanner, answer,

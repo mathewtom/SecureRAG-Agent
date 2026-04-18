@@ -3,6 +3,7 @@
 import os
 import re
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 import httpx
 
@@ -55,6 +56,8 @@ _HAZARD_CATEGORIES: dict[str, str] = {
 
 class OutputScanner:
     """Two-stage LLM output scanner: regex fast path, then Llama Guard 3 1B."""
+
+    name: ClassVar[str] = "output_scan"
 
     def __init__(
         self,

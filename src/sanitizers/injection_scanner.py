@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 
 @dataclass
@@ -48,6 +49,8 @@ _DEFAULT_THRESHOLD = 8
 
 class InjectionScanner:
     """Scores text against known injection patterns and blocks above threshold."""
+
+    name: ClassVar[str] = "injection_scan"
 
     def __init__(self, threshold: int = _DEFAULT_THRESHOLD) -> None:
         self.threshold = threshold

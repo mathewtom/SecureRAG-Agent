@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 
 @dataclass
@@ -25,6 +26,8 @@ _OUTPUT_CLASSIFICATION_PATTERNS: list[tuple[str, re.Pattern]] = [
 
 class ClassificationGuard:
     """Flags output containing classification markers above the user's clearance level."""
+
+    name: ClassVar[str] = "classification_guard"
 
     def __init__(
         self,
