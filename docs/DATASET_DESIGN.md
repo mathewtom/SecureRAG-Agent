@@ -69,8 +69,10 @@ data/meridian/
         └── injection_social.txt          # classical (from Sentinel)
 ```
 
-The Sentinel documents not moved into `data/meridian/` remain under `data/raw/`
-as the classical-RAG fixture; the new agentic corpus is self-contained.
+The new agentic corpus under `data/meridian/` is self-contained. Sentinel's
+original `data/raw/` corpus was removed in Phase 2 (see
+`docs/ARCHITECTURE.md` §"Independence from Sentinel"); Sentinel remains
+available via its own repo if the classical fixture is ever needed.
 
 ## Schemas
 
