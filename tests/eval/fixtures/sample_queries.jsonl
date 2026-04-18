@@ -1,0 +1,2 @@
+{"id": "Q001", "category": "single_hop_search", "user_id": "E003", "query": "test query", "expected": {"outcome": "answered", "answer_contains": ["250"]}, "stub_llm_script": [{"tool_calls": [], "content": "result is 250"}]}
+{"id": "Q002", "category": "authz_denial", "user_id": "E003", "query": "second test", "expected": {"outcome": "answered", "tool_sequence": ["search_documents"]}, "stub_llm_script": [{"tool_calls": [{"id": "t1", "name": "search_documents", "args": {"query": "x"}}]}, {"content": "ok"}]}
