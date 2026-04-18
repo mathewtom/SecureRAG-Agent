@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from uuid import uuid4
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -31,33 +32,66 @@ def run_one_query(
     mode="live": uses src.api._build_chain() — requires Ollama and
     populated ChromaDB. Behavior identical to the running service.
     """
+    # Pre-generate a stable request_id so audit attribution is exact
+    # regardless of whether the chain raised before building a result dict.
+    request_id = f"eval-{query.id}-{uuid4().hex[:8]}"
+
     if mode == "stub":
-        chain = _build_stub_chain(query, logs_dir=logs_dir)
+        chain = _build_stub_chain(query, logs_dir=logs_dir,
+                                  request_id=request_id)
+        return _execute(query, chain, request_id=request_id)
     elif mode == "live":
-        chain = _build_live_chain()
+        return _execute_live(query, request_id=request_id,
+                             logs_dir=logs_dir)
     else:
         raise ValueError(f"unknown mode: {mode!r}")
 
-    return _execute(query, chain)
 
-
-def _build_stub_chain(query: Query, *, logs_dir: Path | None) -> Any:
+def _build_stub_chain(
+    query: Query,
+    *,
+    logs_dir: Path | None,
+    request_id: str,
+) -> Any:
     """Build a chain with a per-query scripted LLM and stub tool
     handlers. Inline imports keep eval/ from importing the full agent
     stack at module load time."""
     from src.agent.audit_sink import AuditSink
     from src.agent.graph import build_graph
+    from src.agent.tools.escalate_to_human import (
+        make_escalate_to_human_handler,
+    )
+    from src.agent.tools.get_approval_chain import (
+        make_get_approval_chain_handler,
+    )
+    from src.agent.tools.get_ticket_detail import (
+        make_get_ticket_detail_handler,
+    )
+    from src.agent.tools.list_calendar_events import (
+        make_list_calendar_events_handler,
+    )
+    from src.agent.tools.list_my_tickets import (
+        make_list_my_tickets_handler,
+    )
+    from src.agent.tools.lookup_employee import (
+        make_lookup_employee_handler,
+    )
     from src.agent.tools.registry import (
         ToolRegistry,
         make_search_documents_handler,
     )
     from src.agent.wrapper import AgenticChain
+    from src.data.loaders import (
+        load_calendar,
+        load_employees,
+        load_projects,
+        load_tickets,
+    )
 
     llm = _ScriptedLLM(query.stub_llm_script)
 
     # Stub retriever returns one fake doc per call so the tool always
-    # produces something. Per-query realism comes in Task O when
-    # specific doc ids are needed.
+    # produces something.
     retriever = MagicMock()
     retriever.search.return_value = [
         {"doc_id": f"stub_doc_{query.id}",
@@ -65,12 +99,43 @@ def _build_stub_chain(query: Query, *, logs_dir: Path | None) -> Any:
          "metadata": {"classification": "INTERNAL"}},
     ]
 
+    # Register all 7 production tools, backed by real Phase-1 fixture
+    # data. This lets the eval queries exercise the full handler
+    # surface (authz, redaction, busy placeholders, etc.) without
+    # mocking each handler individually.
+    employees = {e.employee_id: e for e in load_employees()}
+    tickets_list = load_tickets()
+    tickets_by_id = {t.ticket_id: t for t in tickets_list}
+    projects_by_id = {p.project_id: p for p in load_projects()}
+    events_list = load_calendar()
+    audit = MagicMock()
+
     handlers: ToolRegistry = {
         "search_documents": make_search_documents_handler(retriever),
+        "lookup_employee": make_lookup_employee_handler(
+            employees=employees,
+        ),
+        "get_approval_chain": make_get_approval_chain_handler(
+            employees=employees,
+        ),
+        "list_my_tickets": make_list_my_tickets_handler(
+            employees=employees, tickets=tickets_list,
+        ),
+        "get_ticket_detail": make_get_ticket_detail_handler(
+            employees=employees, tickets=tickets_by_id,
+            projects=projects_by_id,
+        ),
+        "list_calendar_events": make_list_calendar_events_handler(
+            employees=employees, events=events_list,
+        ),
+        "escalate_to_human": make_escalate_to_human_handler(
+            employees=employees, audit=audit,
+        ),
     }
 
-    audit = MagicMock()
-    request_id = f"eval-{query.id}"
+    # Wire the pre-generated request_id into the stub audit so that
+    # every audit event emitted during this query carries the same id
+    # we'll use to read the log back.
     audit.new_request_id.return_value = request_id
 
     effective_logs_dir = logs_dir or Path("logs")
@@ -90,12 +155,37 @@ def _build_stub_chain(query: Query, *, logs_dir: Path | None) -> Any:
     )
 
 
-def _build_live_chain() -> Any:
-    from src.api import _build_chain
-    return _build_chain()
+def _execute_live(
+    query: Query,
+    *,
+    request_id: str,
+    logs_dir: Path | None,
+) -> RunResult:
+    """Run against the live chain with a deterministic request_id.
+
+    The live chain calls src.audit.new_request_id() to mint its
+    request_id. We temporarily replace that function with a lambda
+    returning our pre-generated id, then restore it after the call.
+    This gives us exact audit-log attribution even on exception paths.
+
+    TODO: if _build_chain() itself calls new_request_id at construction
+    time (rather than in .invoke()), move the monkey-patch up to wrap
+    chain construction too. As of Phase 4, new_request_id is called
+    inside AgenticChain.invoke(), so the current placement is correct.
+    """
+    import src.audit as audit_module
+
+    original = audit_module.new_request_id
+    audit_module.new_request_id = lambda: request_id  # type: ignore[method-assign]
+    try:
+        from src.api import _build_chain
+        chain = _build_chain()
+        return _execute(query, chain, request_id=request_id)
+    finally:
+        audit_module.new_request_id = original  # type: ignore[method-assign]
 
 
-def _execute(query: Query, chain: Any) -> RunResult:
+def _execute(query: Query, chain: Any, *, request_id: str) -> RunResult:
     from src.exceptions import (
         AccessDenied,
         BudgetExhausted,
@@ -130,10 +220,8 @@ def _execute(query: Query, chain: Any) -> RunResult:
         actual_outcome = Outcome.ERROR
         raw_exception = f"{type(e).__name__}: {e}"
 
-    # Reconstruct tool sequence + counts from the audit sink for
-    # this request_id.
     tool_seq, denial_count, retrieved_count = _read_audit_for_request(
-        chain, query,
+        chain, request_id=request_id,
     )
 
     return RunResult(
@@ -149,19 +237,20 @@ def _execute(query: Query, chain: Any) -> RunResult:
 
 
 def _read_audit_for_request(
-    chain: Any, query: Query,
+    chain: Any,
+    *,
+    request_id: str,
 ) -> tuple[list[str], int, int]:
     """Re-read the audit sink to extract per-request observables.
 
-    For stub mode the request_id is deterministic ("eval-<query.id>").
-    Live mode is harder — for now, return empty lists; live-mode
-    detail extraction is Task O work.
+    The request_id is pre-generated by run_one_query and wired into
+    the chain's audit object before invocation, so it matches exactly
+    regardless of whether the call succeeded or raised.
     """
     sink = getattr(chain, "_audit_sink", None)
     if sink is None:
         return [], 0, 0
 
-    request_id = f"eval-{query.id}"
     try:
         text = sink.log_path().read_text(encoding="utf-8")
     except FileNotFoundError:
@@ -182,7 +271,7 @@ def _read_audit_for_request(
             if status == "success":
                 tool_seq.append(evt["tool_name"])
                 # Stub retriever always returns 1 doc per
-                # search_documents call
+                # search_documents call.
                 if evt["tool_name"] == "search_documents":
                     retrieved_count += 1
             elif status == "denied":

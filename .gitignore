@@ -80,6 +80,7 @@ dmypy.json
 
 # Project-specific
 chroma_db/
+data/chroma/
 
 # AI tooling — local-only, never tracked
 CLAUDE.md
