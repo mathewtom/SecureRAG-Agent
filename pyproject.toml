@@ -17,6 +17,7 @@ dependencies = [
     "httpx",
     "fastapi",
     "uvicorn",
+    "langgraph>=1.1.8",
 ]
 
 [dependency-groups]
