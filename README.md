@@ -1,211 +1,140 @@
 # SecureRAG-Agent
 
-**Status:** complete (Phases 0–6); see [`docs/PROJECT_COMPLETE.md`](docs/PROJECT_COMPLETE.md).
-
-A security-hardened **agentic** RAG pipeline. Forked from
+A security-hardened agentic RAG service for a fictional company called
+Meridian Corp. Forked from
 [SecureRAG-Sentinel](https://github.com/mathewtom/SecureRAG-Sentinel) at
-commit [`6159f4a`](docs/FORK_ORIGIN.md) because agentic RAG has a different
-attack surface than classical single-shot RAG: tool abuse, cross-hop
-indirect injection, goal hijacking, recursive budget exhaustion. The
-classical-RAG threat model is complete and frozen in Sentinel; this repo
-extends the work into the agentic regime.
+commit [`6159f4a`](docs/FORK_ORIGIN.md) so the agentic threat surface
+(tool misuse, cross-hop indirect injection, identity confusion, goal
+hijacking, recursive budget exhaustion) could be addressed without
+muddying the upstream classical-RAG project.
 
-## Architectural premise
+Status: complete, phases 0 through 6. End-to-end write-up in
+[`docs/PROJECT_COMPLETE.md`](docs/PROJECT_COMPLETE.md).
 
-Every agent-callable tool enforces authorization in its own Python code
-before returning data. The LLM's tool-call arguments are untrusted input;
-the tool verifies the caller against the requested operation regardless
-of what the prompt "promises." Symbolic guarantees (explicit checks, BFS
-org traversal, metadata filters) sit underneath neural defenses (Llama
-Guard, embedding similarity, prompt rules), never the other way around.
+## Overview
 
-Reading order: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the
-durable architectural principles and codebase conventions, then
-[`docs/AGENTIC_PIVOT_PLAN.md`](docs/AGENTIC_PIVOT_PLAN.md) for the
-phased plan.
+The agent serves a single demo employee (Sigmoid Freud, employee_id
+E003) over a single endpoint. A query arrives at `/agent/query`; the
+agent decides which of seven tools to call, possibly chaining several,
+and produces a final answer.
 
-## Project plan
+The tools cover document retrieval, employee lookup, ticket access,
+calendar inspection, approval-chain resolution, and human escalation.
+Each tool enforces its own authorization rule in Python code, not in
+prompt instructions. The LLM cannot grant itself permissions by what
+it says or by what it puts in tool-call arguments.
 
-| Phase | Goal | Status |
-|---|---|---|
-| 0 | Fork, freeze Sentinel context, set up `agentic-pivot` branch | done |
-| 1 | Expand Meridian dataset to support multi-hop and tool-chaining | **done** |
-| 2 | LangGraph agent wired end-to-end, Sentinel security layers wrap entry/exit | next |
-| 3 | Full tool surface, each with authorization enforced in implementation | pending |
-| 4 | Per-hop structured audit (`request_id`, `user_id`, tool, args_hash, verdicts) | pending |
-| 5 | Agentic threat model document mapped to OWASP LLM Top 10 + MITRE ATLAS | pending |
-| 6 | Evaluation harness with multi-hop query suite and baseline run | pending |
+The data is a synthetic Meridian corpus designed to expose multi-hop
+reasoning and cross-tool authorization edges: 45 employees in a
+four-level org chart, 16 projects (with deliberate name collisions to
+force disambiguation), 82 tickets, 58 calendar events (some with
+RESTRICTED recipient lists), and 24 cross-referenced policy and
+project documents alongside 6 adversarial fixtures excluded from
+default ingestion.
 
-## What's done
+Stack: Python 3.12, LangGraph for the ReAct loop, LangChain for tool
+binding, FastAPI for the HTTP surface, Ollama running `llama3.3:70b`
+for the agent and `llama-guard3:1b` for output safety, ChromaDB for
+the vector store, Microsoft Presidio for ingestion-time PII handling,
+uv for dependencies.
 
-### Phase 0 — Fork setup
+## Security controls
 
-- Repository forked from Sentinel preserving full git history.
-- `agentic-pivot` long-lived branch created from `main`.
-- [`docs/FORK_ORIGIN.md`](docs/FORK_ORIGIN.md) records the fork-point SHA,
-  the rationale, and that no changes flow back upstream.
-- Dependency management consolidated to `uv` with hash-pinned `uv.lock`
-  (the inherited `requirements.txt` + `requirements.lock` pair was
-  retired to align with the conventions in
-  [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
+Every defense below has a name in the code, a test that proves it
+holds, and a place in the JSONL audit log where it shows up.
+Mappings are to OWASP LLM Top 10 (2025 edition) and MITRE ATLAS.
 
-### Phase 1 — Meridian dataset (agentic edition)
+| Control | Implementation | OWASP LLM | MITRE ATLAS |
+|---|---|---|---|
+| Identity injected by runtime, not by LLM | `src/agent/graph.py` `AuthenticatedToolNode` strips any `user_id` key from LLM-supplied tool args (case-insensitive), records a denial, and dispatches with the trusted `state["user_id"]` | LLM01, LLM06 | AML.T0051 |
+| Per-tool authorization in handler code | `src/agent/tools/*.py`, composing primitives from `src/agent/tools/auth.py` (manager-chain BFS, same-department, classification, project membership, restricted-recipient) | LLM02, LLM06 | AML.T0024 |
+| Classification filter at retrieval | `src/agent/retriever.py` — ChromaDB metadata filter restricts results to caller's clearance tier | LLM02 | AML.T0024 |
+| Recipient-list gating on RESTRICTED documents | document frontmatter `restricted_to` field honored at the tool layer | LLM02 | AML.T0024 |
+| Step budget cap (20 hops) | enforced in `AuthenticatedToolNode`; `BudgetExhausted` surfaced as HTTP 422 | LLM10 | AML.T0029 |
+| Per-user rate limiter | `src/rate_limiter.py` sliding window | LLM10 | AML.T0029 |
+| Input scanners (entry layer) | `src/sanitizers/injection_scanner.py` regex-scoring, `src/sanitizers/embedding_detector.py` semantic similarity to a known-injection corpus | LLM01 | AML.T0051 |
+| Output scanners (exit layer) | `src/sanitizers/output_scanner.py` regex fast path plus optional Llama Guard semantic check; `src/sanitizers/classification_guard.py`; `src/sanitizers/credential_detector.py` covering ~21 secret patterns | LLM02, LLM05, LLM07 | AML.T0024 |
+| Per-hop structured audit | `src/agent/audit_sink.py` writes JSONL events to `logs/audit-YYYY-MM-DD.jsonl` with `request_start`, `tool_call`, `request_end`. Query content is SHA-256 hashed; the raw query is never logged | detection layer | n/a |
+| Model digest verification at startup | `src/model_integrity.py` checks Ollama model digest against pinned value when `SECURERAG_MODEL_DIGEST` is set | LLM03 | n/a |
+| Hash-pinned dependencies | `uv.lock` with hashes; `uv sync` verifies | LLM03 | n/a |
+| Poisoned-fixture exclusion at ingestion | `src/ingestion/pipeline.py` filters out anything in `data/meridian/documents/poisoned/` | LLM04 | n/a |
 
-The Sentinel Meridian had 12 employees in a flat structure with documents
-that were single-shot answerable — nothing for an agent to *do*. Phase 1
-rebuilt the corpus so realistic questions require 2–5 hops across
-heterogeneous stores. Schema, ER topology, and sample queries at each
-hop depth are in [`docs/DATASET_DESIGN.md`](docs/DATASET_DESIGN.md).
-Inherited employee IDs E001–E012 are preserved for continuity with
-Sentinel.
+The architectural premise: symbolic controls (deterministic, hold
+under adversarial pressure) sit underneath neural controls (Llama
+Guard, embedding similarity, prompt rules). Where the two disagree,
+symbolic wins. Full rationale in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Threat catalog
+T-001 through T-012 with attack-chain walkthroughs in
+[`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md). Per-tool authz
+contracts in [`docs/TOOL_SURFACE.md`](docs/TOOL_SURFACE.md).
 
-**Structured entities** ([`data/meridian/`](data/meridian/))
+## Fire it up
 
-- **45 employees** in a 4-level hierarchy rooted at the CEO. 9 canonical
-  departments. Includes `manager_id`, `clearance_level`, `location`,
-  `salary` (CONFIDENTIAL), and `email` (Presidio-shaped PII for detector
-  exercise).
-- **16 projects** including two deliberate name collisions: `Project
-  Atlas` / `Atlas Mobile` and `Phoenix` / `Phoenix 2.0`. Project
-  membership drives access control for project-scoped artifacts.
-- **82 tickets** across `hr`, `it`, `security`, `engineering`, `legal`,
-  `finance` types. Owner / assignee / project references all
-  cross-validated.
-- **58 calendar events** including 9 RESTRICTED items (Horizon weekly,
-  board prep, exec offsite, exec comp review, active investigation).
-  Non-attendees see `{start, end, classification}` only — never subject
-  or attendee list.
+Prerequisites: Apple Silicon Mac recommended (Metal GPU for the 70B
+model), `uv` installed
+([astral-sh/uv](https://github.com/astral-sh/uv)), Ollama running
+locally with the two models pulled.
 
-**Document corpus** ([`data/meridian/documents/`](data/meridian/documents/))
-
-24 main-corpus documents with explicit cross-references that force
-multi-hop traversal:
-
-- **Policy spine.** Code of Conduct → HR Handbook → Role Definitions →
-  Org Chart → `employees.json`.
-- **Approval spine.** Expense Policy → Approval Matrix → Role Definitions
-  → Vendor Security Assessment.
-- **Security spine.** IR Playbook → Security Training → Data
-  Classification Policy → Acceptable Use Policy.
-- **Project spine.** Phoenix Postmortem → Atlas Design Doc → IR Playbook.
-- **Temporal pair.** `expense_policy_{2025,2026}.md` and
-  `approval_matrix_{2025,2026}.md` — the 2026 approval matrix introduced
-  CEO countersign above $100k, replacing the 2025 single-signature
-  authority that ran to $250k. Lets the agent answer historical-lookup
-  questions ("could the CFO solo-sign $200k in Q3 2025?") without
-  falling back to the current policy.
-- **Restricted items.** Horizon Briefing, Acquisition Target Analysis,
-  Executive Comp Analysis, both Board Minutes (Q4 2025 + Q1 2026), and
-  Q1 2026 Financials each carry an explicit `restricted_to` recipient
-  list that tools must honor.
-
-**Adversarial fixtures** ([`data/meridian/documents/poisoned/`](data/meridian/documents/poisoned/))
-
-Six poisoned documents — all marked `TEST_POISONED: true` in frontmatter
-and excluded from the default loader output:
-
-- **Three classical** (migrated from Sentinel): ChatML role injection,
-  "ignore previous instructions" override, social-pretext injection.
-- **Three agentic-specific** (the heart of why this fork exists):
-  - `injection_tool_redirect.md` — embedded instructions try to coerce
-    the agent into calling `list_calendar_events` with classification=4
-    immediately after retrieval.
-  - `injection_authz_confusion.md` — claims the session `user_id` has
-    been migrated to E012 (CEO) and asks the agent to use it for
-    subsequent tool calls.
-  - `injection_goal_hijack.md` — supersedes the original task with a
-    salary-enumeration-and-exfil objective.
-
-Each poisoned document carries `attack_class`, `target_owasp`, and
-`target_atlas` frontmatter so the future AutoDAN red-team harness can
-attribute attempts back to a specific intended technique.
-
-**Loaders and integrity tests**
-
-- [`src/data/loaders.py`](src/data/loaders.py) — typed frozen
-  dataclasses, hand-rolled YAML frontmatter parser, `include_poisoned`
-  defaults to `False`.
-- [`tests/data/test_dataset_integrity.py`](tests/data/test_dataset_integrity.py)
-  — 25 tests covering manager-cycle absence, hierarchy depth, surname
-  collisions, project member integrity, ticket cross-references,
-  RESTRICTED recipient lists matching project membership, and that
-  every file under `poisoned/` carries the frontmatter flag.
-
-```
-uv run pytest tests/data/test_dataset_integrity.py -q
-# 25 passed
+```bash
+ollama pull llama3.3:70b
+ollama pull llama-guard3:1b
 ```
 
-## Setup
+Bring up the stack:
 
 ```bash
 git clone https://github.com/mathewtom/SecureRAG-Agent.git
 cd SecureRAG-Agent
-uv sync                  # installs from uv.lock
-uv run pytest -q         # smoke
+
+uv sync                                       # install from uv.lock
+
+# Ingest the Meridian corpus into ChromaDB.
+# First run downloads the sentence-transformers embedding model (~80MB).
+uv run python scripts/ingest_meridian.py
+
+# Start the API
+uv run uvicorn src.api:app --host 127.0.0.1 --port 8000
 ```
 
-Python 3.12+. Ollama running locally with `llama3.3:70b` as the default
-model (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full
-conventions).
-
-### Environment variables
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `SECURERAG_MODEL` | `llama3.3:70b` | Main agent LLM. Override to `llama3.1:8b` for faster dev iteration. |
-| `SECURERAG_GUARD_MODEL` | `llama-guard3:1b` | Semantic output scanner model (Llama Guard). |
-| `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint. |
-| `SECURERAG_DEMO_USER` | `E003` | The `user_id` injected for the placeholder `/agent/query` endpoint until real auth is wired. |
-| `SECURERAG_MODEL_DIGEST` | (unset) | If set, agent verifies the loaded model's digest matches at startup. Supply-chain defense. |
-
-### Running the eval harness
-
-The eval harness ([`eval/`](eval/)) drives the agent through 52
-canned queries spanning 11 categories (single/multi-hop, authz
-denials, identity smuggling, budget exhaustion, escalation,
-aggregation, etc.) and verifies behavior against expected outcomes.
-
-Stub mode (default) runs without Ollama in seconds; live mode
-(`--live`) requires the full stack.
+Smoke test from another terminal:
 
 ```bash
-# Stub baseline (CI-friendly)
+curl -s http://127.0.0.1:8000/health
+# {"status":"ok"}
+
+curl -s -X POST http://127.0.0.1:8000/agent/query \
+  -H 'content-type: application/json' \
+  -d '{"query":"What is the 2026 monthly parking reimbursement cap?"}' | jq
+```
+
+Tail the audit log to watch defenses fire in real time:
+
+```bash
+tail -f logs/audit-$(date -u +%Y-%m-%d).jsonl | jq -c .
+```
+
+Run the eval harness (52 canned queries across 11 categories):
+
+```bash
+# Stub mode: deterministic, no Ollama needed, runs in seconds
 uv run python -m eval.run_eval
 
-# One category only
-uv run python -m eval.run_eval --category authz_denial_employee
-
-# Live mode (requires Ollama + populated ChromaDB)
+# Live mode: uses the running stack
 uv run python -m eval.run_eval --live --report eval/results/live_$(date +%Y-%m-%d).md
 ```
 
-Latest baseline: [`eval/results/baseline_2026-04-17.md`](eval/results/baseline_2026-04-17.md).
+Configuration is environment-variable driven:
 
-## Repository layout (current)
+| Variable | Default | Purpose |
+|---|---|---|
+| `SECURERAG_MODEL` | `llama3.3:70b` | Main agent LLM |
+| `SECURERAG_GUARD_MODEL` | `llama-guard3:1b` | Llama Guard model |
+| `SECURERAG_GUARD_SEMANTIC` | `0` | Set `1` to enable Llama Guard semantic check at output (regex fast path always runs) |
+| `SECURERAG_DEMO_USER` | `E003` | The user_id injected for `/agent/query` |
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint |
+| `SECURERAG_MODEL_DIGEST` | unset | When set, agent verifies Ollama model digest at startup |
+| `SECURERAG_RATE_MODE` | unset | Set `test` to relax the rate limiter for security scanning |
 
-```
-.
-├── docs/
-│   ├── ARCHITECTURE.md             # durable architectural principles + conventions
-│   ├── AGENTIC_PIVOT_PLAN.md       # phased plan (authoritative roadmap)
-│   ├── DATASET_DESIGN.md           # Phase 1 schema, ER, sample queries
-│   ├── FORK_ORIGIN.md              # fork-point SHA + rationale
-│   └── SECURITY_ROADMAP.md         # inherited from Sentinel; will be revised
-├── data/
-│   ├── meridian/                   # Phase 1 agentic corpus
-│   │   ├── employees.{json,csv}
-│   │   ├── projects.json
-│   │   ├── tickets.csv
-│   │   ├── calendar.json
-│   │   └── documents/{*.md, poisoned/}
-│   └── raw/                        # Sentinel's classical corpus (untouched)
-├── src/
-│   ├── data/loaders.py             # typed loaders for the agentic corpus
-│   └── …                           # Sentinel-inherited modules
-├── tests/
-│   ├── data/test_dataset_integrity.py
-│   └── …                           # Sentinel-inherited test suites
-├── pyproject.toml                  # [project] + deps
-└── uv.lock                         # hash-pinned (supply-chain defense)
-```
+Adversarial scanning (Garak, PromptFoo) is operated from a separate
+repo, [`ai-redteam-lab`](https://github.com/mathewtom/ai-redteam-lab),
+which targets `/agent/query` rather than the underlying LLM.
