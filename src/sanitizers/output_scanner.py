@@ -7,6 +7,31 @@ from typing import ClassVar
 
 import httpx
 
+# Distinctive n-grams from the runtime system prompt. Any of these
+# appearing verbatim in LLM output is strong evidence of a prompt-leak.
+# Keep short, anchored, and specific so paraphrases aren't caught.
+_SYSTEM_PROMPT_SIGNATURES: tuple[str, ...] = (
+    "Meridian assistant for SecureRAG-Agent",
+    "When the user says \"me\", \"my\", \"I\"",
+    "NEVER attempt to pass `user_id` as a tool argument",
+    "identity is injected by the runtime",
+    "hard cap of 20 tool hops per query",
+    "busy placeholder",
+    "escalate via `escalate_to_human`",
+)
+
+# Signals that the LLM is enumerating its own rules / tool catalog —
+# phrasing that typically shows up in response to polite extraction.
+_SELF_DESCRIBED_RULES = re.compile(
+    r"(my|the)\s+(system\s+prompt|instructions|operational\s+guidelines|"
+    r"tool[-\s]usage\s+polic(y|ies))\b",
+    re.IGNORECASE,
+)
+_NUMBERED_RULES = re.compile(
+    r"^\s*\d+\.\s+\*\*[A-Z][^*]{2,40}\*\*\s*:",
+    re.MULTILINE,
+)
+
 
 @dataclass
 class OutputScanResult:
@@ -88,6 +113,17 @@ class OutputScanner:
         for label, pattern in _HIJACK_PATTERNS:
             if pattern.search(output):
                 reasons.append(f"hijack_pattern: {label}")
+
+        # Stage 1b: prompt-leak echo — verbatim signatures from our own
+        # system prompt, plus the "here are my rules" structural tell.
+        for signature in _SYSTEM_PROMPT_SIGNATURES:
+            if signature in output:
+                reasons.append("system_prompt_echo")
+                break
+        # Two independent signals required for the structural check so
+        # legitimate numbered answers don't false-positive.
+        if _SELF_DESCRIBED_RULES.search(output) and _NUMBERED_RULES.search(output):
+            reasons.append("self_described_rules")
 
         if reasons:
             return OutputScanResult(

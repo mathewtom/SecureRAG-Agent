@@ -136,7 +136,7 @@ Configuration is environment-variable driven:
 |---|---|---|
 | `SECURERAG_MODEL` | `llama3.3:70b` | Main agent LLM |
 | `SECURERAG_GUARD_MODEL` | `llama-guard3:1b` | Llama Guard model |
-| `SECURERAG_GUARD_SEMANTIC` | `0` | Set `1` to enable Llama Guard semantic check at output (regex fast path always runs) |
+| `SECURERAG_GUARD_SEMANTIC` | `1` | Set `0` to disable the Llama Guard semantic check at output (regex fast path always runs) |
 | `SECURERAG_DEMO_USER` | `E003` | The user_id injected for `/agent/query` |
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint |
 | `SECURERAG_MODEL_DIGEST` | unset | When set, agent verifies Ollama model digest at startup |
@@ -145,3 +145,16 @@ Configuration is environment-variable driven:
 Adversarial scanning (Garak, PromptFoo) is operated from a separate
 repo, [`ai-redteam-lab`](https://github.com/mathewtom/ai-redteam-lab),
 which targets `/agent/query` rather than the underlying LLM.
+
+## Red-team status
+
+**PromptFoo pass 1 (2026-04-19):** 328 tests, 72% pass / 28% fail.
+Dominant gaps: base64-encoded prompts bypassed the input scanner (62%
+fail on that strategy) and polite "summarize your instructions" asks
+leaked system-prompt content (prompt-extraction 56% fail). Fixes
+landed in the same day: decode-then-scan in `InjectionScanner`,
+per-caller `ClassificationGuard`, prompt-extraction patterns + output
+echo detector, non-disclosure clause in the system prompt, and Llama
+Guard semantic check now on by default. **PromptFoo pass 2: in
+progress.** Raw report at
+[`reports/Promptfoo/run_noguard_20260419_043242/`](reports/Promptfoo/run_noguard_20260419_043242/).

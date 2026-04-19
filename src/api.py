@@ -179,13 +179,16 @@ def _build_chain() -> Any:
     # For now the regex InjectionScanner provides the entry-layer coverage.
     input_scanners = [injection_scanner]
 
-    # Llama Guard 3 1B has a high false-positive rate on innocuous corporate
-    # queries (privacy-flagging legitimate self-disclosure, etc.). Toggle via
-    # SECURERAG_GUARD_SEMANTIC=1 to re-enable. The regex fast-path always
-    # runs.
+    # Llama Guard 3 1B has a known false-positive rate on innocuous
+    # corporate queries (privacy-flagging legitimate self-disclosure,
+    # etc.). Re-enabled by default after PromptFoo pass 1 showed the
+    # regex-only path misses semantic hijack/PII cases. FPs are tracked
+    # separately and will be addressed by classifier tuning rather than
+    # by disabling the layer. Opt out with SECURERAG_GUARD_SEMANTIC=0
+    # for local perf testing.
     guard_model = os.environ.get("SECURERAG_GUARD_MODEL", "llama-guard3:1b")
     enable_guard_semantic = os.environ.get(
-        "SECURERAG_GUARD_SEMANTIC", "0",
+        "SECURERAG_GUARD_SEMANTIC", "1",
     ) == "1"
     output_scanner_obj = OutputScanner(
         enable_semantic=enable_guard_semantic,
@@ -193,10 +196,14 @@ def _build_chain() -> Any:
         guard_model=guard_model,
     )
 
+    # Per-caller guard: allowed set is derived from the caller's clearance
+    # tier at scan time. The static fallback is {"public"} so unmapped or
+    # unknown callers can only ever emit PUBLIC markers.
+    from src.agent.tools.auth import classifications_up_to
     classification_guard_obj = ClassificationGuard(
-        user_accessible_classifications={
-            "PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED",
-        },
+        user_accessible_classifications={"public"},
+        employees_by_id=employees,
+        tier_allow_fn=classifications_up_to,
     )
 
     credential_detector_obj = CredentialDetector()

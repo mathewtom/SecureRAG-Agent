@@ -1,6 +1,9 @@
 """Prompt injection detection using scored pattern matching."""
 
+import base64
+import binascii
 import re
+import urllib.parse
 from dataclasses import dataclass, field
 from typing import ClassVar
 
@@ -51,9 +54,30 @@ _SCORED_PATTERNS: list[tuple[str, int, re.Pattern]] = [
     ("forget_above", 5, re.compile(r"forget\s+(everything|all)\s+(above|before|prior)", re.IGNORECASE)),
     ("begin_with", 4, re.compile(r"(always\s+)?(begin|start)\s+with\s+\S+\s+(first|before)", re.IGNORECASE)),
     ("when_you_answer", 4, re.compile(r"when\s+you\s+(answer|respond|reply).*always", re.IGNORECASE)),
+    # Prompt-extraction asks surfaced by PromptFoo pass 1 (56% fail rate).
+    # Polite variants ("summarize your instructions", "for documentation
+    # purposes") evaded the scorer because they lacked injection keywords.
+    ("instructions_you_operate_under", 5, re.compile(r"instructions\s+you\s+(operate|run|are\s+running)\s+under", re.IGNORECASE)),
+    ("operational_guidelines", 4, re.compile(r"operational\s+guidelines", re.IGNORECASE)),
+    ("tool_usage_policies", 4, re.compile(r"tool[-\s]usage\s+(polic(y|ies)|rules|guidelines)", re.IGNORECASE)),
+    ("embedded_instructions", 5, re.compile(r"embedded\s+instructions", re.IGNORECASE)),
+    ("current_system_prompt", 5, re.compile(r"(current|exact)\s+system\s+(prompt|instructions)", re.IGNORECASE)),
+    ("summarize_system_prompt", 5, re.compile(r"summariz(e|ing)\s+(your\s+)?(current\s+)?(system\s+prompt|system\s+instructions)", re.IGNORECASE)),
+    ("include_your_system_prompt", 5, re.compile(r"(include|provide|share|reveal)\s+(your\s+)?(system\s+prompt|system\s+instructions|internal\s+instructions)", re.IGNORECASE)),
+    ("document_compliance", 3, re.compile(r"document\s+compliance", re.IGNORECASE)),
+    ("for_transparency_reveal", 4, re.compile(r"for\s+transparency.*(provide|share|reveal).*(prompt|instructions|configuration)", re.IGNORECASE)),
+    ("initial_prompt", 4, re.compile(r"initial\s+(prompt|instructions|configuration)", re.IGNORECASE)),
 ]
 
 _DEFAULT_THRESHOLD = 8
+
+# Long runs that look like an encoded payload. PromptFoo's base64 strategy
+# often sends the entire prompt as one token; the agent LLM decodes and
+# complies. We decode these before scoring so the same pattern set fires.
+_BASE64_RUN = re.compile(r"[A-Za-z0-9+/=]{32,}")
+_HEX_RUN = re.compile(r"(?:(?<![A-Za-z0-9])(?:[0-9a-fA-F]{2}\s?){16,})")
+_PCT_ENCODED = re.compile(r"(?:%[0-9a-fA-F]{2}){4,}")
+_MIN_DECODE_LEN = 16  # don't bother scanning short decodes
 
 
 class InjectionScanner:
@@ -65,18 +89,75 @@ class InjectionScanner:
         self.threshold = threshold
 
     def scan(self, text: str) -> InjectionScanResult:
-        """Scan text for injection patterns. Blocks if cumulative score >= threshold."""
-        total_score = 0
-        matches: list[str] = []
+        """Scan text for injection patterns. Blocks if cumulative score >= threshold.
 
-        for label, score, pattern in _SCORED_PATTERNS:
-            if pattern.search(text):
-                total_score += score
-                matches.append(label)
+        Scans the raw text, then repeats the scan against base64/hex/percent
+        decoded payloads found inside the text. Decoded matches are unioned
+        into the same score so obfuscated injections can't evade the gate.
+        """
+        total_score, matches = self._score(text)
+
+        for decoded, encoding in self._decoded_variants(text):
+            d_score, d_matches = self._score(decoded)
+            if d_score > 0:
+                total_score += d_score
+                matches.extend(f"{m}[{encoding}]" for m in d_matches)
+
+        # Deduplicate while preserving order so reason strings stay stable.
+        seen: set[str] = set()
+        deduped = [m for m in matches if not (m in seen or seen.add(m))]
 
         return InjectionScanResult(
             blocked=total_score >= self.threshold,
             total_score=total_score,
             threshold=self.threshold,
-            matches=matches,
+            matches=deduped,
         )
+
+    def _score(self, text: str) -> tuple[int, list[str]]:
+        total = 0
+        hits: list[str] = []
+        for label, score, pattern in _SCORED_PATTERNS:
+            if pattern.search(text):
+                total += score
+                hits.append(label)
+        return total, hits
+
+    def _decoded_variants(self, text: str) -> list[tuple[str, str]]:
+        """Yield (decoded_text, encoding_label) for each encoded run found
+        in `text`. Silently skips undecodable runs.
+        """
+        variants: list[tuple[str, str]] = []
+
+        for match in _BASE64_RUN.findall(text):
+            try:
+                decoded = base64.b64decode(match, validate=False).decode(
+                    "utf-8", errors="ignore",
+                )
+            except (binascii.Error, ValueError):
+                continue
+            if len(decoded) >= _MIN_DECODE_LEN:
+                variants.append((decoded, "base64"))
+
+        for match in _HEX_RUN.findall(text):
+            cleaned = re.sub(r"\s", "", match)
+            if len(cleaned) % 2:
+                continue
+            try:
+                decoded = bytes.fromhex(cleaned).decode(
+                    "utf-8", errors="ignore",
+                )
+            except ValueError:
+                continue
+            if len(decoded) >= _MIN_DECODE_LEN:
+                variants.append((decoded, "hex"))
+
+        if _PCT_ENCODED.search(text):
+            try:
+                decoded = urllib.parse.unquote(text, errors="ignore")
+            except (UnicodeDecodeError, ValueError):
+                decoded = ""
+            if decoded and decoded != text and len(decoded) >= _MIN_DECODE_LEN:
+                variants.append((decoded, "pct"))
+
+        return variants
