@@ -91,6 +91,7 @@ class OutputScanner:
         ollama_host: str | None = None,
         guard_model: str = "llama-guard3:1b",
         timeout_seconds: float = 30.0,
+        num_ctx: int | None = None,
     ) -> None:
         self._rogue_strings = _ROGUE_STRINGS + (extra_rogue_strings or [])
         self._enable_semantic = enable_semantic
@@ -99,6 +100,11 @@ class OutputScanner:
         self._ollama_host = ollama_host or os.environ.get(
             "OLLAMA_HOST", "http://localhost:11434"
         )
+        # Guard sees only short (query, answer) pairs; 4k ctx is plenty
+        # and leaves VRAM for the 70B agent. Env override for ops.
+        if num_ctx is None:
+            num_ctx = int(os.environ.get("SECURERAG_GUARD_NUM_CTX", "4096"))
+        self._num_ctx = num_ctx
 
     def scan(self, output: str, question: str = "") -> OutputScanResult:
         """Scan LLM output. Returns flagged=True if suspicious content found."""
@@ -166,6 +172,7 @@ class OutputScanner:
                     "model": self._guard_model,
                     "messages": messages,
                     "stream": False,
+                    "options": {"num_ctx": self._num_ctx},
                 },
                 timeout=self._timeout,
             )

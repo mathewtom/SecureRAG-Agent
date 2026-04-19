@@ -116,6 +116,11 @@ def _build_chain() -> Any:
 
     model = os.environ.get("SECURERAG_MODEL", "llama3.3:70b")
     ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+    # Cap the agent LLM's context window so the 70B + guard can coexist in
+    # VRAM. The default (131072) reserves ~100GB of weights-plus-KV which
+    # evicts llama-guard3:1b on every call; 8192 is plenty for scan prompts
+    # (≤2k tokens) plus ReAct turns and leaves headroom for the guard.
+    agent_num_ctx = int(os.environ.get("SECURERAG_AGENT_NUM_CTX", "8192"))
     expected_digest = os.environ.get("SECURERAG_MODEL_DIGEST")
     if expected_digest:
         verify_model_digest(
@@ -155,7 +160,10 @@ def _build_chain() -> Any:
         ),
     }
 
-    llm = ChatOllama(model=model, base_url=ollama_host, temperature=0)
+    llm = ChatOllama(
+        model=model, base_url=ollama_host, temperature=0,
+        num_ctx=agent_num_ctx,
+    )
     audit_sink = AuditSink(logs_dir=Path("logs"))
     graph = build_graph(
         llm=llm, handlers=handlers, audit=audit, audit_sink=audit_sink,
