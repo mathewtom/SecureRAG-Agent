@@ -173,7 +173,13 @@ class AgenticChain:
                 self._audit.log_verdict(request_id, user_id,
                                         scanner.name, "exit", result)
                 if getattr(result, "flagged", False):
-                    raise OutputFlagged([result.reason])
+                    # Different scanners use different field names:
+                    # OutputScanner returns `reasons: list[str]`, others use
+                    # singular `reason: str`. Normalize to a list.
+                    reasons = getattr(result, "reasons", None)
+                    if reasons is None:
+                        reasons = [getattr(result, "reason", "flagged")]
+                    raise OutputFlagged(list(reasons))
 
         except RateLimitExceeded:
             self._emit_end(request_id, "rate_limited", step_count=0)
