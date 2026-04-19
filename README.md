@@ -1,5 +1,12 @@
 # SecureRAG-Agent
 
+> **Rate limiter — disabled.** The per-user sliding-window limiter
+> (`src/rate_limiter.py`) is currently wired in **no-op mode** so that
+> red-team scans (Garak, PromptFoo) can fire the adversarial corpus without
+> being swallowed by 429s. This is a deliberate testing posture — see
+> [src/api.py](src/api.py) for the exact line, and the control table below
+> for how to re-enable.
+
 A security-hardened agentic RAG service for a fictional company called
 Meridian Corp. Forked from
 [SecureRAG-Sentinel](https://github.com/mathewtom/SecureRAG-Sentinel) at
@@ -51,7 +58,7 @@ Mappings are to OWASP LLM Top 10 (2025 edition) and MITRE ATLAS.
 | Classification filter at retrieval | `src/agent/retriever.py` — ChromaDB metadata filter restricts results to caller's clearance tier | LLM02 | AML.T0024 |
 | Recipient-list gating on RESTRICTED documents | document frontmatter `restricted_to` field honored at the tool layer | LLM02 | AML.T0024 |
 | Step budget cap (20 hops) | enforced in `AuthenticatedToolNode`; `BudgetExhausted` surfaced as HTTP 422 | LLM10 | AML.T0029 |
-| Per-user rate limiter | `src/rate_limiter.py` sliding window | LLM10 | AML.T0029 |
+| Per-user rate limiter | `src/rate_limiter.py` sliding window — **DISABLED in `src/api.py` for red-team scanning; pass through `RateLimiter()` to re-enable** | LLM10 | AML.T0029 |
 | Input scanners (entry layer) | `src/sanitizers/injection_scanner.py` regex-scoring, `src/sanitizers/embedding_detector.py` semantic similarity to a known-injection corpus | LLM01 | AML.T0051 |
 | Output scanners (exit layer) | `src/sanitizers/output_scanner.py` regex fast path plus optional Llama Guard semantic check; `src/sanitizers/classification_guard.py`; `src/sanitizers/credential_detector.py` covering ~21 secret patterns | LLM02, LLM05, LLM07 | AML.T0024 |
 | Per-hop structured audit | `src/agent/audit_sink.py` writes JSONL events to `logs/audit-YYYY-MM-DD.jsonl` with `request_start`, `tool_call`, `request_end`. Query content is SHA-256 hashed; the raw query is never logged | detection layer | n/a |

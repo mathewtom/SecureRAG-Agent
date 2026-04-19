@@ -162,7 +162,14 @@ def _build_chain() -> Any:
         employees=employees,
     )
 
-    rate = RateLimiter()
+    # RATE LIMITER DISABLED FOR SECURITY TESTING (Garak / PromptFoo scans).
+    # The red-team corpus fires thousands of adversarial prompts in rapid
+    # succession; with the production limiter in place, most requests return
+    # 429 before reaching the real defense stack, masking signal about the
+    # injection/classification/credential scanners. Re-enable by replacing
+    # this with `RateLimiter()` (picks up SECURERAG_RATE_MODE env var) once
+    # scanning is complete. See README section "Rate limiter — disabled".
+    rate = RateLimiter(max_requests=None)
 
     injection_scanner = InjectionScanner(threshold=5)
 

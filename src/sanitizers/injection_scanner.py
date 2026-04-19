@@ -13,6 +13,15 @@ class InjectionScanResult:
     threshold: int = 0
     matches: list[str] = field(default_factory=list)
 
+    @property
+    def reason(self) -> str:
+        if not self.matches:
+            return f"score {self.total_score} >= threshold {self.threshold}"
+        return (
+            f"injection patterns matched ({', '.join(self.matches)}); "
+            f"score {self.total_score} >= threshold {self.threshold}"
+        )
+
 
 # (label, score, compiled_regex)
 _SCORED_PATTERNS: list[tuple[str, int, re.Pattern]] = [
