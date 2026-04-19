@@ -172,9 +172,16 @@ def _build_chain() -> Any:
     # For now the regex InjectionScanner provides the entry-layer coverage.
     input_scanners = [injection_scanner]
 
+    # Llama Guard 3 1B has a high false-positive rate on innocuous corporate
+    # queries (privacy-flagging legitimate self-disclosure, etc.). Toggle via
+    # SECURERAG_GUARD_SEMANTIC=1 to re-enable. The regex fast-path always
+    # runs.
     guard_model = os.environ.get("SECURERAG_GUARD_MODEL", "llama-guard3:1b")
+    enable_guard_semantic = os.environ.get(
+        "SECURERAG_GUARD_SEMANTIC", "0",
+    ) == "1"
     output_scanner_obj = OutputScanner(
-        enable_semantic=True,
+        enable_semantic=enable_guard_semantic,
         ollama_host=ollama_host,
         guard_model=guard_model,
     )
