@@ -15,7 +15,7 @@ from typing import Any
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langgraph.graph import END, StateGraph
 
-from src.agent.prompts import SYSTEM_PROMPT
+from src.agent.prompts import SYSTEM_PROMPT, build_system_prompt
 from src.agent.state import AgentState, ToolCallRecord, ToolStatus
 from src.exceptions import AccessDenied
 from src.agent.tools import (
@@ -204,6 +204,7 @@ def build_graph(
     handlers: ToolRegistry,
     audit: Any | None = None,
     audit_sink: Any | None = None,
+    employees: dict[str, Any] | None = None,
 ) -> Any:
     """Build the LangGraph ReAct state machine.
 
@@ -242,7 +243,11 @@ def build_graph(
     ])
 
     def agent_llm_node(state: AgentState) -> dict[str, Any]:
-        messages = _prepend_system(state["messages"])
+        caller_record = _caller_record(employees, state["user_id"])
+        messages = _prepend_system(
+            state["messages"], state["user_id"],
+            caller=caller_record,
+        )
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
 
@@ -271,7 +276,45 @@ def _route_after_llm(state: AgentState) -> str:
     return "end"
 
 
-def _prepend_system(messages: list[Any]) -> list[Any]:
+def _prepend_system(
+    messages: list[Any],
+    user_id: str,
+    caller: dict[str, Any] | None = None,
+) -> list[Any]:
+    """Prepend a per-request system message that includes the caller's
+    identity (and optional profile) so the LLM can resolve "me/my"
+    without an extra lookup_employee call.
+
+    Idempotent: if the first message is already a SystemMessage (e.g.,
+    a resumed conversation), don't double-prepend.
+    """
     if messages and isinstance(messages[0], SystemMessage):
         return messages
-    return [SystemMessage(content=SYSTEM_PROMPT), *messages]
+    prompt = build_system_prompt(user_id=user_id, caller=caller)
+    return [SystemMessage(content=prompt), *messages]
+
+
+def _caller_record(
+    employees: dict[str, Any] | None, user_id: str,
+) -> dict[str, Any] | None:
+    """Resolve the caller's user_id to a serializable dict for prompt
+    injection. Returns None if the directory isn't available (e.g., in
+    tests that don't pass employees) — the prompt then falls back to
+    user_id only.
+    """
+    if employees is None:
+        return None
+    emp = employees.get(user_id)
+    if emp is None:
+        return None
+    # Support both Employee dataclasses and plain dicts.
+    if hasattr(emp, "employee_id"):
+        return {
+            "employee_id": emp.employee_id,
+            "name": emp.name,
+            "title": emp.title,
+            "department": emp.department,
+            "manager_id": emp.manager_id,
+            "location": emp.location,
+        }
+    return dict(emp)

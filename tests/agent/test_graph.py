@@ -138,10 +138,13 @@ def test_system_prompt_prepended_to_messages_for_llm():
     graph.invoke(state)
 
     from langchain_core.messages import SystemMessage
-    from src.agent.prompts import SYSTEM_PROMPT
+    from src.agent.prompts import build_system_prompt
     assert len(captured) == 1
     sent = captured[0]
     assert isinstance(sent[0], SystemMessage)
-    assert sent[0].content == SYSTEM_PROMPT
+    # System prompt is built per-request with the caller's identity
+    # injected so the LLM can resolve "me/my" to the trusted user_id.
+    assert sent[0].content == build_system_prompt(user_id="E003")
+    assert "E003" in sent[0].content
     assert isinstance(sent[1], HumanMessage)
     assert sent[1].content == "hi"

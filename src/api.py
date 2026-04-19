@@ -157,7 +157,10 @@ def _build_chain() -> Any:
 
     llm = ChatOllama(model=model, base_url=ollama_host, temperature=0)
     audit_sink = AuditSink(logs_dir=Path("logs"))
-    graph = build_graph(llm=llm, handlers=handlers, audit=audit, audit_sink=audit_sink)
+    graph = build_graph(
+        llm=llm, handlers=handlers, audit=audit, audit_sink=audit_sink,
+        employees=employees,
+    )
 
     rate = RateLimiter()
 
