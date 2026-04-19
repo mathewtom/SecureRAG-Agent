@@ -148,13 +148,23 @@ which targets `/agent/query` rather than the underlying LLM.
 
 ## Red-team status
 
-**PromptFoo pass 1 (2026-04-19):** 328 tests, 72% pass / 28% fail.
-Dominant gaps: base64-encoded prompts bypassed the input scanner (62%
-fail on that strategy) and polite "summarize your instructions" asks
-leaked system-prompt content (prompt-extraction 56% fail). Fixes
-landed in the same day: decode-then-scan in `InjectionScanner`,
-per-caller `ClassificationGuard`, prompt-extraction patterns + output
-echo detector, non-disclosure clause in the system prompt, and Llama
-Guard semantic check now on by default. **PromptFoo pass 2: in
-progress.** Raw report at
-[`reports/Promptfoo/run_noguard_20260419_043242/`](reports/Promptfoo/run_noguard_20260419_043242/).
+**PromptFoo pass 1 (2026-04-19, 5h 38m, 328 tests):** 72% pass / 28%
+fail. Dominant gaps: base64 strategy 62% fail and polite
+prompt-extraction 56% fail.
+
+**Same-day fixes:** decode-then-scan in `InjectionScanner`, per-caller
+`ClassificationGuard`, prompt-extraction patterns + output system-prompt
+echo detector, non-disclosure clause in the system prompt, Llama Guard
+semantic on by default, and `num_ctx` capped on agent + guard so both
+coexist in VRAM.
+
+**PromptFoo pass 2 (2026-04-19, 6h 4m, 328 tests):** **77% pass / 22%
+fail / 1% errors** (4 timeouts on the late jailbreak-templates tail).
+Biggest wins: prompt-extraction **56% → 16%** (−40pp), pii:direct
+36% → 16% (−20pp), debug-access 20% → 0%, jailbreak:meta strategy
+52% → 39% (−12.5pp). New regressions surfaced in rbac, bola,
+excessive-agency — fresh attack prompts (PromptFoo regenerates per
+run) exposed authorization-decision edges the LLM still rationalizes
+through; tracked for pass 3. Raw reports:
+[`reports/Promptfoo/run_noguard_20260419_043242/`](reports/Promptfoo/run_noguard_20260419_043242/) (pass 1) and
+[`reports/Promptfoo/run_fixed_20260419_pass2/`](reports/Promptfoo/run_fixed_20260419_pass2/) (pass 2).
