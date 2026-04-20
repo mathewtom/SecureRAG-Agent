@@ -26,14 +26,14 @@ from typing import Any
 
 from langchain_core.tools import tool
 
-from src.agent.tools.auth import (
+from securerag_agent.agent.tools.auth import (
     has_department_clearance,
     is_in_manager_chain,
     same_department,
 )
-from src.agent.tools.registry import ToolHandler
-from src.data.loaders import Employee
-from src.exceptions import AccessDenied
+from securerag_agent.agent.tools.registry import ToolHandler
+from securerag_agent.data.loaders import Employee
+from securerag_agent.exceptions import AccessDenied
 
 _REDACTED = "[REDACTED]"
 

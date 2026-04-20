@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.sanitizers.injection_scanner import InjectionScanner
+from securerag_agent.sanitizers.injection_scanner import InjectionScanner
 
 
 class TestInjectionScanner:

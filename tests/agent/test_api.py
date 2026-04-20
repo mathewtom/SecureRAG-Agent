@@ -15,12 +15,12 @@ from fastapi.testclient import TestClient
 def app_with_mock_chain(monkeypatch: pytest.MonkeyPatch):
     mock_chain = MagicMock()
 
-    import src.api
-    monkeypatch.setattr(src.api, "_build_chain",
+    import securerag_agent.api
+    monkeypatch.setattr(securerag_agent.api, "_build_chain",
                         lambda: mock_chain)
-    src.api._reset_chain_for_test()
+    securerag_agent.api._reset_chain_for_test()
 
-    client = TestClient(src.api.app)
+    client = TestClient(securerag_agent.api.app)
     return client, mock_chain
 
 
@@ -50,7 +50,7 @@ def test_agent_query_happy_path(app_with_mock_chain: tuple[TestClient, Any]):
 def test_agent_query_returns_429_on_rate_limit(
     app_with_mock_chain: tuple[TestClient, Any],
 ):
-    from src.rate_limiter import RateLimitExceeded
+    from securerag_agent.rate_limiter import RateLimitExceeded
     client, chain = app_with_mock_chain
     chain.invoke.side_effect = RateLimitExceeded("too many", 60.0)
     resp = client.post("/agent/query", json={"query": "q"})
@@ -60,7 +60,7 @@ def test_agent_query_returns_429_on_rate_limit(
 def test_agent_query_returns_400_on_input_block(
     app_with_mock_chain: tuple[TestClient, Any],
 ):
-    from src.exceptions import QueryBlocked
+    from securerag_agent.exceptions import QueryBlocked
     client, chain = app_with_mock_chain
     chain.invoke.side_effect = QueryBlocked(
         "injection score too high", {"layer": "injection_scan"},
@@ -72,7 +72,7 @@ def test_agent_query_returns_400_on_input_block(
 def test_agent_query_returns_422_on_output_flag(
     app_with_mock_chain: tuple[TestClient, Any],
 ):
-    from src.exceptions import OutputFlagged
+    from securerag_agent.exceptions import OutputFlagged
     client, chain = app_with_mock_chain
     chain.invoke.side_effect = OutputFlagged(["classification leak"])
     resp = client.post("/agent/query", json={"query": "q"})
@@ -82,7 +82,7 @@ def test_agent_query_returns_422_on_output_flag(
 def test_agent_query_returns_422_on_budget_exhausted(
     app_with_mock_chain: tuple[TestClient, Any],
 ):
-    from src.exceptions import BudgetExhausted
+    from securerag_agent.exceptions import BudgetExhausted
     client, chain = app_with_mock_chain
     chain.invoke.side_effect = BudgetExhausted(max_steps=20)
     resp = client.post("/agent/query", json={"query": "q"})

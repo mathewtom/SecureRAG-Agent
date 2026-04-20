@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.model_integrity import verify_model_digest, ModelDigestMismatch
+from securerag_agent.model_integrity import verify_model_digest, ModelDigestMismatch
 
 
 class TestModelDigestVerification:

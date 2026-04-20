@@ -19,7 +19,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-DATA_ROOT = Path(__file__).resolve().parents[2] / "data" / "meridian"
+DATA_ROOT = Path(__file__).resolve().parents[3] / "data" / "meridian"
 
 CLASSIFICATION_NAMES = {
     1: "PUBLIC",

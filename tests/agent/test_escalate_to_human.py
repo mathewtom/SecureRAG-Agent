@@ -5,12 +5,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.agent.tools.escalate_to_human import (
+from securerag_agent.agent.tools.escalate_to_human import (
     escalate_to_human,
     make_escalate_to_human_handler,
 )
-from src.data.loaders import Employee
-from src.exceptions import AccessDenied
+from securerag_agent.data.loaders import Employee
+from securerag_agent.exceptions import AccessDenied
 
 
 def _emp(eid: str) -> Employee:

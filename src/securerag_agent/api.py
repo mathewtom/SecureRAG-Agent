@@ -16,13 +16,13 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from src.exceptions import (
+from securerag_agent.exceptions import (
     AccessDenied,
     BudgetExhausted,
     OutputFlagged,
     QueryBlocked,
 )
-from src.rate_limiter import RateLimitExceeded
+from securerag_agent.rate_limiter import RateLimitExceeded
 
 DEMO_USER_ID = os.environ.get("SECURERAG_DEMO_USER", "E003")
 
@@ -95,24 +95,24 @@ def _build_chain() -> Any:
     from langchain_ollama import ChatOllama
 
     from src import audit
-    from src.agent.audit_sink import AuditSink
-    from src.agent.graph import build_graph
-    from src.agent.retriever import MeridianRetriever
-    from src.agent.tools.escalate_to_human import make_escalate_to_human_handler
-    from src.agent.tools.get_approval_chain import make_get_approval_chain_handler
-    from src.agent.tools.get_ticket_detail import make_get_ticket_detail_handler
-    from src.agent.tools.list_calendar_events import make_list_calendar_events_handler
-    from src.agent.tools.list_my_tickets import make_list_my_tickets_handler
-    from src.agent.tools.lookup_employee import make_lookup_employee_handler
-    from src.agent.tools.registry import ToolRegistry, make_search_documents_handler
-    from src.agent.wrapper import AgenticChain
-    from src.data.loaders import load_calendar, load_employees, load_projects, load_tickets
-    from src.model_integrity import verify_model_digest
-    from src.rate_limiter import RateLimiter
-    from src.sanitizers.classification_guard import ClassificationGuard
-    from src.sanitizers.credential_detector import CredentialDetector
-    from src.sanitizers.injection_scanner import InjectionScanner
-    from src.sanitizers.output_scanner import OutputScanner
+    from securerag_agent.agent.audit_sink import AuditSink
+    from securerag_agent.agent.graph import build_graph
+    from securerag_agent.agent.retriever import MeridianRetriever
+    from securerag_agent.agent.tools.escalate_to_human import make_escalate_to_human_handler
+    from securerag_agent.agent.tools.get_approval_chain import make_get_approval_chain_handler
+    from securerag_agent.agent.tools.get_ticket_detail import make_get_ticket_detail_handler
+    from securerag_agent.agent.tools.list_calendar_events import make_list_calendar_events_handler
+    from securerag_agent.agent.tools.list_my_tickets import make_list_my_tickets_handler
+    from securerag_agent.agent.tools.lookup_employee import make_lookup_employee_handler
+    from securerag_agent.agent.tools.registry import ToolRegistry, make_search_documents_handler
+    from securerag_agent.agent.wrapper import AgenticChain
+    from securerag_agent.data.loaders import load_calendar, load_employees, load_projects, load_tickets
+    from securerag_agent.model_integrity import verify_model_digest
+    from securerag_agent.rate_limiter import RateLimiter
+    from securerag_agent.sanitizers.classification_guard import ClassificationGuard
+    from securerag_agent.sanitizers.credential_detector import CredentialDetector
+    from securerag_agent.sanitizers.injection_scanner import InjectionScanner
+    from securerag_agent.sanitizers.output_scanner import OutputScanner
 
     model = os.environ.get("SECURERAG_MODEL", "llama3.3:70b")
     ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
@@ -207,7 +207,7 @@ def _build_chain() -> Any:
     # Per-caller guard: allowed set is derived from the caller's clearance
     # tier at scan time. The static fallback is {"public"} so unmapped or
     # unknown callers can only ever emit PUBLIC markers.
-    from src.agent.tools.auth import classifications_up_to
+    from securerag_agent.agent.tools.auth import classifications_up_to
     classification_guard_obj = ClassificationGuard(
         user_accessible_classifications={"public"},
         employees_by_id=employees,

@@ -13,7 +13,7 @@ Why pure functions, not a class:
 
 from __future__ import annotations
 
-from src.data.loaders import CalendarEvent, Employee, Project, Ticket
+from securerag_agent.data.loaders import CalendarEvent, Employee, Project, Ticket
 
 _CLASSIFICATION_ORDER = ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"]
 

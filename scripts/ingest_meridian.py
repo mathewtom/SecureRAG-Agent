@@ -24,14 +24,14 @@ import argparse
 import sys
 from pathlib import Path
 
-# Make `src.*` imports resolvable when running this script directly.
+# Make `securerag_agent.*` imports resolvable when running this script directly.
 # pytest does this automatically via rootdir; standalone scripts don't.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import chromadb  # noqa: E402
 
-from src.ingestion.pipeline import ingest_meridian  # noqa: E402
-from src.sanitizers.gate import SanitizationGate  # noqa: E402
+from securerag_agent.ingestion.pipeline import ingest_meridian  # noqa: E402
+from securerag_agent.sanitizers.gate import SanitizationGate  # noqa: E402
 
 DATA_ROOT = Path("data/meridian")
 CHROMA_DIR = Path("data/chroma")

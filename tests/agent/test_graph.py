@@ -5,9 +5,9 @@ from unittest.mock import Mock
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from src.agent.graph import build_graph
-from src.agent.state import initial_state
-from src.agent.tools.registry import make_search_documents_handler
+from securerag_agent.agent.graph import build_graph
+from securerag_agent.agent.state import initial_state
+from securerag_agent.agent.tools.registry import make_search_documents_handler
 
 
 def _handlers_for(retriever: Mock) -> dict[str, Any]:
@@ -138,7 +138,7 @@ def test_system_prompt_prepended_to_messages_for_llm():
     graph.invoke(state)
 
     from langchain_core.messages import SystemMessage
-    from src.agent.prompts import build_system_prompt
+    from securerag_agent.agent.prompts import build_system_prompt
     assert len(captured) == 1
     sent = captured[0]
     assert isinstance(sent[0], SystemMessage)

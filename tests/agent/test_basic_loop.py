@@ -17,7 +17,7 @@ pytestmark = pytest.mark.integration
 def test_parking_policy_question_end_to_end() -> None:
     from fastapi.testclient import TestClient
 
-    import src.api as api
+    import securerag_agent.api as api
 
     api._reset_chain_for_test()
 

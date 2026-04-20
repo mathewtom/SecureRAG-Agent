@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from src.rate_limiter import RateLimiter, RateLimitExceeded
+from securerag_agent.rate_limiter import RateLimiter, RateLimitExceeded
 
 
 class TestRateLimiter:
@@ -65,7 +65,7 @@ class TestRateLimiterModeSelection:
     def test_production_defaults(self, monkeypatch) -> None:
         monkeypatch.delenv("SECURERAG_RATE_MODE", raising=False)
         import importlib
-        import src.rate_limiter as rl_mod
+        import securerag_agent.rate_limiter as rl_mod
         importlib.reload(rl_mod)
         assert rl_mod.DEFAULT_MAX_REQUESTS == 10
         assert rl_mod.DEFAULT_WINDOW_SECONDS == 60
@@ -74,7 +74,7 @@ class TestRateLimiterModeSelection:
         """Test mode: default construction disables the limiter entirely."""
         monkeypatch.setenv("SECURERAG_RATE_MODE", "test")
         import importlib
-        import src.rate_limiter as rl_mod
+        import securerag_agent.rate_limiter as rl_mod
         importlib.reload(rl_mod)
         assert rl_mod.DEFAULT_MAX_REQUESTS is None
 
@@ -85,7 +85,7 @@ class TestRateLimiterModeSelection:
     def test_test_mode_case_insensitive(self, monkeypatch) -> None:
         monkeypatch.setenv("SECURERAG_RATE_MODE", "Test")
         import importlib
-        import src.rate_limiter as rl_mod
+        import securerag_agent.rate_limiter as rl_mod
         importlib.reload(rl_mod)
         assert rl_mod.DEFAULT_MAX_REQUESTS is None
 
@@ -93,7 +93,7 @@ class TestRateLimiterModeSelection:
         """Explicit max_requests still enforces limits even in test mode."""
         monkeypatch.setenv("SECURERAG_RATE_MODE", "test")
         import importlib
-        import src.rate_limiter as rl_mod
+        import securerag_agent.rate_limiter as rl_mod
         importlib.reload(rl_mod)
 
         limiter = rl_mod.RateLimiter(max_requests=3, window_seconds=60)

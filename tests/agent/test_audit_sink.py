@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from src.agent.audit_sink import AuditSink
+from securerag_agent.agent.audit_sink import AuditSink
 
 
 @pytest.fixture

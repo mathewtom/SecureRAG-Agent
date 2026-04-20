@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.sanitizers.classification_guard import ClassificationGuard
+from securerag_agent.sanitizers.classification_guard import ClassificationGuard
 
 
 class TestClassificationGuard:

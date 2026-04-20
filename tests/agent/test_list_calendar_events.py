@@ -4,12 +4,12 @@ import datetime as dt
 
 import pytest
 
-from src.agent.tools.list_calendar_events import (
+from securerag_agent.agent.tools.list_calendar_events import (
     list_calendar_events,
     make_list_calendar_events_handler,
 )
-from src.data.loaders import CalendarEvent, Employee
-from src.exceptions import AccessDenied
+from securerag_agent.data.loaders import CalendarEvent, Employee
+from securerag_agent.exceptions import AccessDenied
 
 
 def _emp(eid: str) -> Employee:

@@ -17,9 +17,9 @@ from typing import Any
 
 from langchain_core.tools import tool
 
-from src.agent.tools.registry import ToolHandler
-from src.data.loaders import Employee
-from src.exceptions import AccessDenied
+from securerag_agent.agent.tools.registry import ToolHandler
+from securerag_agent.data.loaders import Employee
+from securerag_agent.exceptions import AccessDenied
 
 
 @tool

@@ -4,12 +4,12 @@ import datetime
 
 import pytest
 
-from src.agent.tools.get_ticket_detail import (
+from securerag_agent.agent.tools.get_ticket_detail import (
     get_ticket_detail,
     make_get_ticket_detail_handler,
 )
-from src.data.loaders import Employee, Project, Ticket
-from src.exceptions import AccessDenied
+from securerag_agent.data.loaders import Employee, Project, Ticket
+from securerag_agent.exceptions import AccessDenied
 
 
 def _emp(eid: str) -> Employee:

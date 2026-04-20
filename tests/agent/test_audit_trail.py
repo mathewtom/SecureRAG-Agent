@@ -15,10 +15,10 @@ from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessage
 
-from src.agent.audit_sink import AuditSink
-from src.agent.graph import build_graph
-from src.agent.wrapper import AgenticChain
-from src.agent.tools.registry import (
+from securerag_agent.agent.audit_sink import AuditSink
+from securerag_agent.agent.graph import build_graph
+from securerag_agent.agent.wrapper import AgenticChain
+from securerag_agent.agent.tools.registry import (
     ToolRegistry, make_search_documents_handler,
 )
 

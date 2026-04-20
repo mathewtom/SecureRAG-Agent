@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from src.sanitizers.gate import SanitizationGate
+from securerag_agent.sanitizers.gate import SanitizationGate
 
 
 class TestSanitizationGate:

@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--live", action="store_true",
-        help="Use live Ollama via src.api._build_chain (slow; "
+        help="Use live Ollama via securerag_agent.api._build_chain (slow; "
              "requires Ollama + populated Chroma).",
     )
     parser.add_argument(

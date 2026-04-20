@@ -29,7 +29,7 @@ def run_one_query(
     mode="stub": LLM is a scripted sequence from query.stub_llm_script;
     no Ollama required.
 
-    mode="live": uses src.api._build_chain() — requires Ollama and
+    mode="live": uses securerag_agent.api._build_chain() — requires Ollama and
     populated ChromaDB. Behavior identical to the running service.
     """
     # Pre-generate a stable request_id so audit attribution is exact
@@ -56,32 +56,32 @@ def _build_stub_chain(
     """Build a chain with a per-query scripted LLM and stub tool
     handlers. Inline imports keep eval/ from importing the full agent
     stack at module load time."""
-    from src.agent.audit_sink import AuditSink
-    from src.agent.graph import build_graph
-    from src.agent.tools.escalate_to_human import (
+    from securerag_agent.agent.audit_sink import AuditSink
+    from securerag_agent.agent.graph import build_graph
+    from securerag_agent.agent.tools.escalate_to_human import (
         make_escalate_to_human_handler,
     )
-    from src.agent.tools.get_approval_chain import (
+    from securerag_agent.agent.tools.get_approval_chain import (
         make_get_approval_chain_handler,
     )
-    from src.agent.tools.get_ticket_detail import (
+    from securerag_agent.agent.tools.get_ticket_detail import (
         make_get_ticket_detail_handler,
     )
-    from src.agent.tools.list_calendar_events import (
+    from securerag_agent.agent.tools.list_calendar_events import (
         make_list_calendar_events_handler,
     )
-    from src.agent.tools.list_my_tickets import (
+    from securerag_agent.agent.tools.list_my_tickets import (
         make_list_my_tickets_handler,
     )
-    from src.agent.tools.lookup_employee import (
+    from securerag_agent.agent.tools.lookup_employee import (
         make_lookup_employee_handler,
     )
-    from src.agent.tools.registry import (
+    from securerag_agent.agent.tools.registry import (
         ToolRegistry,
         make_search_documents_handler,
     )
-    from src.agent.wrapper import AgenticChain
-    from src.data.loaders import (
+    from securerag_agent.agent.wrapper import AgenticChain
+    from securerag_agent.data.loaders import (
         load_calendar,
         load_employees,
         load_projects,
@@ -163,7 +163,7 @@ def _execute_live(
 ) -> RunResult:
     """Run against the live chain with a deterministic request_id.
 
-    The live chain calls src.audit.new_request_id() to mint its
+    The live chain calls securerag_agent.audit.new_request_id() to mint its
     request_id. We temporarily replace that function with a lambda
     returning our pre-generated id, then restore it after the call.
     This gives us exact audit-log attribution even on exception paths.
@@ -173,12 +173,12 @@ def _execute_live(
     chain construction too. As of Phase 4, new_request_id is called
     inside AgenticChain.invoke(), so the current placement is correct.
     """
-    import src.audit as audit_module
+    import securerag_agent.audit as audit_module
 
     original = audit_module.new_request_id
     audit_module.new_request_id = lambda: request_id  # type: ignore[method-assign]
     try:
-        from src.api import _build_chain
+        from securerag_agent.api import _build_chain
         chain = _build_chain()
         return _execute(query, chain, request_id=request_id)
     finally:
@@ -186,13 +186,13 @@ def _execute_live(
 
 
 def _execute(query: Query, chain: Any, *, request_id: str) -> RunResult:
-    from src.exceptions import (
+    from securerag_agent.exceptions import (
         AccessDenied,
         BudgetExhausted,
         OutputFlagged,
         QueryBlocked,
     )
-    from src.rate_limiter import RateLimitExceeded
+    from securerag_agent.rate_limiter import RateLimitExceeded
 
     actual_answer: str | None = None
     actual_outcome: Outcome

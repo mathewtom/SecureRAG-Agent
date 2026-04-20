@@ -7,13 +7,13 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
-from src.agent.wrapper import AgenticChain
-from src.exceptions import (
+from securerag_agent.agent.wrapper import AgenticChain
+from securerag_agent.exceptions import (
     BudgetExhausted,
     OutputFlagged,
     QueryBlocked,
 )
-from src.rate_limiter import RateLimitExceeded
+from securerag_agent.rate_limiter import RateLimitExceeded
 
 
 def _scanner(name: str, *, blocks: bool = False, flags: bool = False):
@@ -143,7 +143,7 @@ def test_security_verdicts_accumulate_entry_and_exit():
 
 def test_request_start_event_emitted_on_invoke(tmp_path):
     """Every invoke emits exactly one request_start before any other event."""
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     sink = AuditSink(logs_dir=tmp_path)
     graph, _ = _graph_returning(termination_reason="answered")
@@ -161,7 +161,7 @@ def test_request_start_event_emitted_on_invoke(tmp_path):
 
 
 def test_request_end_emitted_on_happy_path(tmp_path):
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     sink = AuditSink(logs_dir=tmp_path)
     graph, _ = _graph_returning(termination_reason="answered",
@@ -178,7 +178,7 @@ def test_request_end_emitted_on_happy_path(tmp_path):
 
 
 def test_request_end_emitted_on_budget_exhausted(tmp_path):
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     sink = AuditSink(logs_dir=tmp_path)
     graph, _ = _graph_returning(
@@ -197,7 +197,7 @@ def test_request_end_emitted_on_budget_exhausted(tmp_path):
 
 
 def test_request_end_emitted_on_query_blocked(tmp_path):
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     sink = AuditSink(logs_dir=tmp_path)
     graph, _ = _graph_returning()
@@ -215,7 +215,7 @@ def test_request_end_emitted_on_query_blocked(tmp_path):
 
 
 def test_request_end_emitted_on_output_flagged(tmp_path):
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     sink = AuditSink(logs_dir=tmp_path)
     graph, _ = _graph_returning(termination_reason="answered",
@@ -234,7 +234,7 @@ def test_request_end_emitted_on_output_flagged(tmp_path):
 
 
 def test_request_end_emitted_on_rate_limited(tmp_path):
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     sink = AuditSink(logs_dir=tmp_path)
     graph, _ = _graph_returning()

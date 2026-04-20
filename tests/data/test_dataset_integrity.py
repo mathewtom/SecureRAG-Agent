@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from src.data.loaders import (
+from securerag_agent.data.loaders import (
     CLASSIFICATION_VALUES,
     DATA_ROOT,
     load_calendar,

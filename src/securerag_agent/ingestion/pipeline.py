@@ -15,8 +15,8 @@ from typing import Any
 from langchain_core.documents import Document as LCDocument
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from src.data.loaders import Document as MeridianDoc
-from src.data.loaders import load_documents
+from securerag_agent.data.loaders import Document as MeridianDoc
+from securerag_agent.data.loaders import load_documents
 
 SAFE_METADATA_KEYS = {
     "title",

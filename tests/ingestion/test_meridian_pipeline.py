@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.ingestion.pipeline import (
+from securerag_agent.ingestion.pipeline import (
     SAFE_METADATA_KEYS,
     IngestResult,
     ingest_meridian,

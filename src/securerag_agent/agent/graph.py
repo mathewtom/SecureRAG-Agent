@@ -15,10 +15,10 @@ from typing import Any
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langgraph.graph import END, StateGraph
 
-from src.agent.prompts import SYSTEM_PROMPT, build_system_prompt
-from src.agent.state import AgentState, ToolCallRecord, ToolStatus
-from src.exceptions import AccessDenied
-from src.agent.tools import (
+from securerag_agent.agent.prompts import SYSTEM_PROMPT, build_system_prompt
+from securerag_agent.agent.state import AgentState, ToolCallRecord, ToolStatus
+from securerag_agent.exceptions import AccessDenied
+from securerag_agent.agent.tools import (
     escalate_to_human,
     get_approval_chain,
     get_ticket_detail,
@@ -27,7 +27,7 @@ from src.agent.tools import (
     lookup_employee,
     search_documents,
 )
-from src.agent.tools.registry import ToolRegistry
+from securerag_agent.agent.tools.registry import ToolRegistry
 
 
 class AuthenticatedToolNode:
@@ -216,7 +216,7 @@ def build_graph(
         Ollama-backed LangChain chat model; tests pass a stub.
     handlers
         Registry mapping tool name to its authorized handler callable.
-        See ``src.agent.tools.registry`` for the handler protocol and
+        See ``securerag_agent.agent.tools.registry`` for the handler protocol and
         factory functions.
     audit
         Optional audit module. When provided, denial and error events

@@ -5,7 +5,7 @@ import logging
 
 import pytest
 
-from src.audit import log_denial, new_request_id, _question_hash
+from securerag_agent.audit import log_denial, new_request_id, _question_hash
 
 
 class TestAuditLogging:

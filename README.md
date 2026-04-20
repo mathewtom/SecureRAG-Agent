@@ -100,7 +100,7 @@ uv sync                                       # install from uv.lock
 uv run python scripts/ingest_meridian.py
 
 # Start the API
-uv run uvicorn src.api:app --host 127.0.0.1 --port 8000
+uv run uvicorn securerag_agent.api:app --host 127.0.0.1 --port 8000
 ```
 
 Smoke test from another terminal:

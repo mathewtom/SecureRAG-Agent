@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.sanitizers.output_scanner import OutputScanner, OutputScanResult
+from securerag_agent.sanitizers.output_scanner import OutputScanner, OutputScanResult
 
 
 class TestOutputScannerFastPath:

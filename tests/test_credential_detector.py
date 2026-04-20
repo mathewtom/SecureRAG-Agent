@@ -6,7 +6,7 @@ triggering GitHub Secret Scanning on fake test data.
 
 import pytest
 
-from src.sanitizers.credential_detector import CredentialDetector
+from securerag_agent.sanitizers.credential_detector import CredentialDetector
 
 
 class TestCredentialDetectorPositive:

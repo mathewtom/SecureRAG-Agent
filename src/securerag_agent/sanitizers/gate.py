@@ -6,9 +6,9 @@ from datetime import datetime, timezone
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda
 
-from src.sanitizers.credential_detector import CredentialDetector
-from src.sanitizers.injection_scanner import InjectionScanner
-from src.sanitizers.pii_detector import PIIDetector
+from securerag_agent.sanitizers.credential_detector import CredentialDetector
+from securerag_agent.sanitizers.injection_scanner import InjectionScanner
+from securerag_agent.sanitizers.pii_detector import PIIDetector
 
 _INGESTION_EMBEDDING_THRESHOLD = 0.50
 
@@ -31,7 +31,7 @@ class SanitizationGate:
         self._credential_detector = CredentialDetector()
         self._embedding_detector = None
         if embedding_function is not None:
-            from src.sanitizers.embedding_detector import EmbeddingInjectionDetector
+            from securerag_agent.sanitizers.embedding_detector import EmbeddingInjectionDetector
             self._embedding_detector = EmbeddingInjectionDetector(
                 embedding_function=embedding_function,
                 threshold=_INGESTION_EMBEDDING_THRESHOLD,

@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.agent.tools.auth import classifications_up_to  # re-export
-from src.data.loaders import Employee
-from src.exceptions import AccessDenied
+from securerag_agent.agent.tools.auth import classifications_up_to  # re-export
+from securerag_agent.data.loaders import Employee
+from securerag_agent.exceptions import AccessDenied
 
 __all__ = ["MeridianRetriever", "classifications_up_to"]
 

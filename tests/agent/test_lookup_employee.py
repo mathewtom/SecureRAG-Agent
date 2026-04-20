@@ -12,12 +12,12 @@ import datetime
 
 import pytest
 
-from src.agent.tools.lookup_employee import (
+from securerag_agent.agent.tools.lookup_employee import (
     lookup_employee,
     make_lookup_employee_handler,
 )
-from src.data.loaders import Employee
-from src.exceptions import AccessDenied
+from securerag_agent.data.loaders import Employee
+from securerag_agent.exceptions import AccessDenied
 
 
 def _emp(eid: str, *, manager: str | None = None,

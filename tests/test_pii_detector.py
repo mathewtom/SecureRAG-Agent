@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.sanitizers.pii_detector import PIIDetector
+from securerag_agent.sanitizers.pii_detector import PIIDetector
 
 
 class TestPIIDetector:

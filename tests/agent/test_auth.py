@@ -5,7 +5,7 @@ import datetime as _dt  # alias used in ticket/project/calendar helpers
 
 import pytest
 
-from src.agent.tools.auth import (
+from securerag_agent.agent.tools.auth import (
     classifications_up_to,
     has_department_clearance,
     is_calendar_attendee,
@@ -16,7 +16,7 @@ from src.agent.tools.auth import (
     restricted_to_allows,
     same_department,
 )
-from src.data.loaders import CalendarEvent, Employee, Project, Ticket
+from securerag_agent.data.loaders import CalendarEvent, Employee, Project, Ticket
 
 
 def _emp(eid: str, *, manager: str | None = None,

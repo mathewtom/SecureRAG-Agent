@@ -16,10 +16,10 @@ from typing import Any
 
 from langchain_core.tools import tool
 
-from src.agent.tools.auth import is_project_member, is_ticket_principal
-from src.agent.tools.registry import ToolHandler
-from src.data.loaders import Employee, Project, Ticket
-from src.exceptions import AccessDenied
+from securerag_agent.agent.tools.auth import is_project_member, is_ticket_principal
+from securerag_agent.agent.tools.registry import ToolHandler
+from securerag_agent.data.loaders import Employee, Project, Ticket
+from securerag_agent.exceptions import AccessDenied
 
 
 @tool

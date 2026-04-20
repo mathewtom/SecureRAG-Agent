@@ -3,7 +3,7 @@
 import pytest
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from src.sanitizers.embedding_detector import (
+from securerag_agent.sanitizers.embedding_detector import (
     EmbeddingInjectionDetector,
     _INJECTION_CORPUS,
 )

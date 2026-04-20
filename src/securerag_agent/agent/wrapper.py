@@ -12,9 +12,9 @@ import inspect
 import unicodedata
 from typing import Any, Callable
 
-from src.agent.state import SecurityDecision, SecurityVerdict, initial_state
-from src.exceptions import BudgetExhausted, OutputFlagged, QueryBlocked
-from src.rate_limiter import RateLimitExceeded
+from securerag_agent.agent.state import SecurityDecision, SecurityVerdict, initial_state
+from securerag_agent.exceptions import BudgetExhausted, OutputFlagged, QueryBlocked
+from securerag_agent.rate_limiter import RateLimitExceeded
 
 
 def _now_iso() -> str:

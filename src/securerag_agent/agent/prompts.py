@@ -119,7 +119,7 @@ def build_system_prompt(
 
     `caller` is the structured employee record returned by
     `MeridianRetriever`-adjacent code (or directly from
-    `src.data.loaders.load_employees`). When None, falls back to a
+    `securerag_agent.data.loaders.load_employees`). When None, falls back to a
     minimal block with just user_id — useful for tests where loading
     the directory would be excessive.
     """

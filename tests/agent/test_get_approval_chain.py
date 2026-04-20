@@ -4,12 +4,12 @@ import datetime
 
 import pytest
 
-from src.agent.tools.get_approval_chain import (
+from securerag_agent.agent.tools.get_approval_chain import (
     get_approval_chain,
     make_get_approval_chain_handler,
 )
-from src.data.loaders import Employee
-from src.exceptions import AccessDenied
+from securerag_agent.data.loaders import Employee
+from securerag_agent.exceptions import AccessDenied
 
 
 def _emp(eid: str, *, manager: str | None = None,

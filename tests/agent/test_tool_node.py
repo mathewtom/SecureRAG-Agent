@@ -10,9 +10,9 @@ from unittest.mock import Mock
 
 from langchain_core.messages import AIMessage, ToolMessage
 
-from src.agent.graph import AuthenticatedToolNode
-from src.agent.state import initial_state
-from src.agent.tools.registry import make_search_documents_handler
+from securerag_agent.agent.graph import AuthenticatedToolNode
+from securerag_agent.agent.state import initial_state
+from securerag_agent.agent.tools.registry import make_search_documents_handler
 
 
 def _node_with_retriever(retriever: Mock, audit: Mock | None = None) -> AuthenticatedToolNode:
@@ -278,7 +278,7 @@ def test_audit_sink_receives_event_per_tool_call(tmp_path):
     """Every successful tool call emits one sink event."""
     import json
 
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     retriever = Mock()
     retriever.search.return_value = [
@@ -311,8 +311,8 @@ def test_access_denied_recorded_as_denied_not_error(tmp_path):
     not status=error. This separates security events from operator errors."""
     import json
 
-    from src.agent.audit_sink import AuditSink
-    from src.exceptions import AccessDenied
+    from securerag_agent.agent.audit_sink import AuditSink
+    from securerag_agent.exceptions import AccessDenied
 
     sink = AuditSink(logs_dir=tmp_path)
     handlers = {"search_documents": (
@@ -336,7 +336,7 @@ def test_access_denied_recorded_as_denied_not_error(tmp_path):
 def test_other_exceptions_still_recorded_as_error(tmp_path):
     """A handler raising ValueError (or any non-AccessDenied) keeps
     status=error so operator errors are still distinguishable."""
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     sink = AuditSink(logs_dir=tmp_path)
     handlers = {"search_documents": (
@@ -360,7 +360,7 @@ def test_llm_user_id_injection_emits_separate_denial_event(tmp_path):
     its own event."""
     import json
 
-    from src.agent.audit_sink import AuditSink
+    from securerag_agent.agent.audit_sink import AuditSink
 
     sink = AuditSink(logs_dir=tmp_path)
     retriever_mock = Mock()

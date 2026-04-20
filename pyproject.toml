@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "securerag-agent"
 version = "0.1.0"
@@ -21,6 +25,9 @@ dependencies = [
     "langchain-ollama>=1.1.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/securerag_agent"]
+
 [dependency-groups]
 dev = [
     "mypy>=1.20.1",
@@ -30,6 +37,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
+pythonpath = ["src"]
 markers = [
     "integration: requires Ollama with llama-guard3:1b",
 ]
@@ -38,14 +46,14 @@ markers = [
 strict = true
 
 # Sentinel-inherited sanitizer modules have not been upgraded to strict
-# typing yet. Suppress their errors so `mypy --strict src/api.py` stays
-# clean on files we own; these modules are tracked separately.
+# typing yet. Suppress their errors so `mypy --strict` on files we own
+# stays clean; these modules are tracked separately.
 [[tool.mypy.overrides]]
 module = [
-    "src.sanitizers.injection_scanner",
-    "src.sanitizers.credential_detector",
-    "src.sanitizers.classification_guard",
-    "src.sanitizers.output_scanner",
-    "src.audit",
+    "securerag_agent.sanitizers.injection_scanner",
+    "securerag_agent.sanitizers.credential_detector",
+    "securerag_agent.sanitizers.classification_guard",
+    "securerag_agent.sanitizers.output_scanner",
+    "securerag_agent.audit",
 ]
 ignore_errors = true

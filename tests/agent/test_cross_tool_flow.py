@@ -15,19 +15,19 @@ from typing import Any
 
 from langchain_core.messages import AIMessage
 
-from src.agent.graph import build_graph
-from src.agent.state import initial_state
-from src.agent.tools.get_approval_chain import (
+from securerag_agent.agent.graph import build_graph
+from securerag_agent.agent.state import initial_state
+from securerag_agent.agent.tools.get_approval_chain import (
     make_get_approval_chain_handler,
 )
-from src.agent.tools.lookup_employee import (
+from securerag_agent.agent.tools.lookup_employee import (
     make_lookup_employee_handler,
 )
-from src.agent.tools.registry import (
+from securerag_agent.agent.tools.registry import (
     ToolRegistry,
     make_search_documents_handler,
 )
-from src.data.loaders import Employee
+from securerag_agent.data.loaders import Employee
 
 
 # ---------- shared fixtures (no pytest fixture decorator since these

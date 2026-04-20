@@ -5,12 +5,12 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.agent.retriever import (
+from securerag_agent.agent.retriever import (
     MeridianRetriever,
     classifications_up_to,
 )
-from src.data.loaders import Employee
-from src.exceptions import AccessDenied
+from securerag_agent.data.loaders import Employee
+from securerag_agent.exceptions import AccessDenied
 
 
 def _emp(eid: str, clearance: int) -> Employee:
