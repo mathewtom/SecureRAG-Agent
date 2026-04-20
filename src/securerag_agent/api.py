@@ -94,7 +94,7 @@ def _build_chain() -> Any:
     import chromadb
     from langchain_ollama import ChatOllama
 
-    from src import audit
+    from securerag_agent import audit
     from securerag_agent.agent.audit_sink import AuditSink
     from securerag_agent.agent.graph import build_graph
     from securerag_agent.agent.retriever import MeridianRetriever
